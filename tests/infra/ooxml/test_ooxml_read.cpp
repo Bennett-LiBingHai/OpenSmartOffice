@@ -1,16 +1,18 @@
-#include <gtest/gtest.h>
-#include "oso/ooxml/read/IOoxmlReader.h"
-#include "oso/ooxml/read/Libxml2Reader.h"
-#include "oso/ooxml/common/OoxmlNamespaces.h"
+#include "oso/base/ErrorCode.h"
+#include "oso/io/IStream.h"
 #include "oso/ooxml/common/IZipArchive.h"
 #include "oso/ooxml/common/LibzipZipArchive.h"
-#include "oso/io/IStream.h"
-#include "oso/base/ErrorCode.h"
+#include "oso/ooxml/common/OoxmlNamespaces.h"
+#include "oso/ooxml/read/IOoxmlReader.h"
+#include "oso/ooxml/read/Libxml2Reader.h"
+
+#include <gtest/gtest.h>
+
 #include <cstdio>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
-#include<cstring>
 
 using namespace oso;
 namespace fs = std::filesystem;
@@ -19,11 +21,14 @@ namespace {
 
 struct TempFile {
     std::string path;
-    explicit TempFile(std::string p) : path(std::move(p)) {}
-    ~TempFile() { std::remove(path.c_str()); }
+    explicit TempFile(std::string p) : path(std::move(p)) {
+    }
+    ~TempFile() {
+        std::remove(path.c_str());
+    }
 };
 
-} // anonymous namespace
+}  // anonymous namespace
 
 // ============================================================
 // 基本 XML 解析
@@ -33,28 +38,26 @@ TEST(Libxml2Reader, ParseSimpleXml) {
     Libxml2Reader reader;
 
     const char* xml = "<?xml version=\"1.0\"?><root><child>text</child></root>";
-    std::vector<uint8_t> data(reinterpret_cast<const uint8_t*>(xml), reinterpret_cast<const uint8_t*>(xml) + std::strlen(xml));
+    std::vector<uint8_t> data(reinterpret_cast<const uint8_t*>(xml),
+                              reinterpret_cast<const uint8_t*>(xml) + std::strlen(xml));
 
     std::vector<std::string> events;
 
-    auto result = reader.parse(data,
-        [&](const std::string& nsUri, const std::string& localName,
-            const std::string& qName, const std::vector<XmlAttribute>& attrs) {
+    auto result = reader.parse(
+        data,
+        [&](const std::string& nsUri, const std::string& localName, const std::string& qName,
+            const std::vector<XmlAttribute>& attrs) {
             std::ostringstream oss;
-            oss << "START ns='" << nsUri << "' local='" << localName
-                << "' qName='" << qName << "' attrs=" << attrs.size();
+            oss << "START ns='" << nsUri << "' local='" << localName << "' qName='" << qName
+                << "' attrs=" << attrs.size();
             events.push_back(oss.str());
         },
-        [&](const std::string& nsUri, const std::string& localName,
-            const std::string& qName) {
+        [&](const std::string& nsUri, const std::string& localName, const std::string& qName) {
             std::ostringstream oss;
-            oss << "END ns='" << nsUri << "' local='" << localName
-                << "' qName='" << qName << "'";
+            oss << "END ns='" << nsUri << "' local='" << localName << "' qName='" << qName << "'";
             events.push_back(oss.str());
         },
-        [&](const std::string& text) {
-            events.push_back("TEXT '" + text + "'");
-        });
+        [&](const std::string& text) { events.push_back("TEXT '" + text + "'"); });
 
     ASSERT_TRUE(result.isOk()) << result.message();
     ASSERT_GE(events.size(), 3u);
@@ -82,42 +85,39 @@ TEST(Libxml2Reader, ParseNamespacedXml) {
 
     std::vector<std::string> events;
 
-    auto result = reader.parse(data,
-        [&](const std::string& nsUri, const std::string& localName,
-            const std::string& qName, const std::vector<XmlAttribute>&) {
+    auto result = reader.parse(
+        data,
+        [&](const std::string& nsUri, const std::string& localName, const std::string& qName,
+            const std::vector<XmlAttribute>&) {
             std::ostringstream oss;
-            oss << "START ns='" << nsUri << "' local='" << localName
-                << "' qName='" << qName << "'";
+            oss << "START ns='" << nsUri << "' local='" << localName << "' qName='" << qName << "'";
             events.push_back(oss.str());
         },
-        [&](const std::string& nsUri, const std::string& localName,
-            const std::string& qName) {
+        [&](const std::string& nsUri, const std::string& localName, const std::string& qName) {
             std::ostringstream oss;
             oss << "END ns='" << nsUri << "' local='" << localName << "'";
             events.push_back(oss.str());
         },
-        [&](const std::string& text) {
-            events.push_back("TEXT '" + text + "'");
-        });
+        [&](const std::string& text) { events.push_back("TEXT '" + text + "'"); });
 
     ASSERT_TRUE(result.isOk()) << result.message();
 
     // 验证命名空间 URI 被正确解析
     EXPECT_EQ(events[0],
-        "START ns='http://schemas.openxmlformats.org/wordprocessingml/2006/main' "
-        "local='document' qName='w:document'");
+              "START ns='http://schemas.openxmlformats.org/wordprocessingml/2006/main' "
+              "local='document' qName='w:document'");
     EXPECT_EQ(events[1],
-        "START ns='http://schemas.openxmlformats.org/wordprocessingml/2006/main' "
-        "local='body' qName='w:body'");
+              "START ns='http://schemas.openxmlformats.org/wordprocessingml/2006/main' "
+              "local='body' qName='w:body'");
     EXPECT_EQ(events[2],
-        "START ns='http://schemas.openxmlformats.org/wordprocessingml/2006/main' "
-        "local='p' qName='w:p'");
+              "START ns='http://schemas.openxmlformats.org/wordprocessingml/2006/main' "
+              "local='p' qName='w:p'");
     EXPECT_EQ(events[3],
-        "START ns='http://schemas.openxmlformats.org/wordprocessingml/2006/main' "
-        "local='r' qName='w:r'");
+              "START ns='http://schemas.openxmlformats.org/wordprocessingml/2006/main' "
+              "local='r' qName='w:r'");
     EXPECT_EQ(events[4],
-        "START ns='http://schemas.openxmlformats.org/wordprocessingml/2006/main' "
-        "local='t' qName='w:t'");
+              "START ns='http://schemas.openxmlformats.org/wordprocessingml/2006/main' "
+              "local='t' qName='w:t'");
     EXPECT_EQ(events[5], "TEXT 'Hello'");
 }
 
@@ -137,10 +137,12 @@ TEST(Libxml2Reader, ParseAttributes) {
 
     std::vector<XmlAttribute> capturedAttrs;
 
-    auto result = reader.parse(data,
-        [&](const std::string&, const std::string& localName,
-            const std::string&, const std::vector<XmlAttribute>& attrs) {
-            if (localName == "p") capturedAttrs = attrs;
+    auto result = reader.parse(
+        data,
+        [&](const std::string&, const std::string& localName, const std::string&,
+            const std::vector<XmlAttribute>& attrs) {
+            if (localName == "p")
+                capturedAttrs = attrs;
         },
         nullptr, nullptr);
 
@@ -176,27 +178,23 @@ TEST(Libxml2Reader, ParseRealDocumentXml) {
     int textCount = 0;
     std::string rootLocalName;
 
-    auto result = reader.parse(xmlData.value(),
-        [&](const std::string& nsUri, const std::string& localName,
-            const std::string&, const std::vector<XmlAttribute>&) {
+    auto result = reader.parse(
+        xmlData.value(),
+        [&](const std::string& nsUri, const std::string& localName, const std::string&,
+            const std::vector<XmlAttribute>&) {
             startCount++;
             if (startCount == 1) {
                 rootLocalName = localName;
-                EXPECT_EQ(nsUri,
-                    "http://schemas.openxmlformats.org/wordprocessingml/2006/main");
+                EXPECT_EQ(nsUri, "http://schemas.openxmlformats.org/wordprocessingml/2006/main");
             }
         },
-        [&](const std::string&, const std::string&, const std::string&) {
-            endCount++;
-        },
-        [&](const std::string&) {
-            textCount++;
-        });
+        [&](const std::string&, const std::string&, const std::string&) { endCount++; },
+        [&](const std::string&) { textCount++; });
 
     ASSERT_TRUE(result.isOk()) << result.message();
     EXPECT_EQ(rootLocalName, "document");
-    EXPECT_GE(startCount, 3); // document, body, p
-    EXPECT_EQ(endCount, startCount); // 每个开始配一个结束
+    EXPECT_GE(startCount, 3);  // document, body, p
+    EXPECT_EQ(endCount, startCount);  // 每个开始配一个结束
 }
 
 // ============================================================
@@ -218,26 +216,26 @@ TEST(Libxml2Reader, ParseContentTypesXml) {
     };
     std::vector<ElementInfo> elements;
 
-    auto result = reader.parse(xmlData.value(),
-        [&](const std::string& nsUri, const std::string& localName,
-            const std::string&, const std::vector<XmlAttribute>&) {
-            elements.push_back({nsUri, localName});
-        },
+    auto result = reader.parse(
+        xmlData.value(),
+        [&](const std::string& nsUri, const std::string& localName, const std::string&,
+            const std::vector<XmlAttribute>&) { elements.push_back({nsUri, localName}); },
         nullptr, nullptr);
 
     ASSERT_TRUE(result.isOk()) << result.message();
     ASSERT_GE(elements.size(), 1u);
 
     EXPECT_EQ(elements[0].localName, "Types");
-    EXPECT_EQ(elements[0].nsUri,
-        "http://schemas.openxmlformats.org/package/2006/content-types");
+    EXPECT_EQ(elements[0].nsUri, "http://schemas.openxmlformats.org/package/2006/content-types");
 
     // 至少有一个 Override 或 Default
     bool foundOverride = false;
     bool foundDefault = false;
     for (const auto& el : elements) {
-        if (el.localName == "Override") foundOverride = true;
-        if (el.localName == "Default") foundDefault = true;
+        if (el.localName == "Override")
+            foundOverride = true;
+        if (el.localName == "Default")
+            foundDefault = true;
     }
     EXPECT_TRUE(foundOverride || foundDefault);
 }
@@ -269,7 +267,7 @@ TEST(Libxml2Reader, ParseNoCallbacksOk) {
     std::vector<uint8_t> data(xml, xml + std::strlen(xml));
 
     auto result = reader.parse(data, nullptr, nullptr, nullptr);
-    EXPECT_TRUE(result.isOk()); // null callbacks are fine, just don't fire
+    EXPECT_TRUE(result.isOk());  // null callbacks are fine, just don't fire
 }
 
 // ============================================================
@@ -284,9 +282,10 @@ TEST(Libxml2Reader, ParseStreamFromMemory) {
     Libxml2Reader reader;
     std::vector<std::string> events;
 
-    auto result = reader.parseStream(stream,
-        [&](const std::string&, const std::string& localName,
-            const std::string& qName, const std::vector<XmlAttribute>& attrs) {
+    auto result = reader.parseStream(
+        stream,
+        [&](const std::string&, const std::string& localName, const std::string& qName,
+            const std::vector<XmlAttribute>& attrs) {
             std::ostringstream oss;
             oss << "START local='" << localName << "' attrs=" << attrs.size();
             events.push_back(oss.str());
@@ -312,17 +311,14 @@ TEST(Libxml2Reader, ParseStreamWithText) {
     Libxml2Reader reader;
     std::vector<std::string> texts;
 
-    auto result = reader.parseStream(stream,
-        [&](const std::string&, const std::string& localName,
-            const std::string&, const std::vector<XmlAttribute>&) {
-            texts.push_back("START " + localName);
-        },
+    auto result = reader.parseStream(
+        stream,
+        [&](const std::string&, const std::string& localName, const std::string&,
+            const std::vector<XmlAttribute>&) { texts.push_back("START " + localName); },
         [&](const std::string&, const std::string& localName, const std::string&) {
             texts.push_back("END " + localName);
         },
-        [&](const std::string& text) {
-            texts.push_back("TEXT " + text);
-        });
+        [&](const std::string& text) { texts.push_back("TEXT " + text); });
 
     ASSERT_TRUE(result.isOk()) << result.message();
     ASSERT_EQ(texts.size(), 6u);
@@ -340,17 +336,16 @@ TEST(Libxml2Reader, ParseStreamWithText) {
 
 TEST(OoxmlNamespaces, WordprocessingML) {
     EXPECT_EQ(OoxmlNamespaces::kWordprocessingML,
-        "http://schemas.openxmlformats.org/wordprocessingml/2006/main");
+              "http://schemas.openxmlformats.org/wordprocessingml/2006/main");
 }
 
 TEST(OoxmlNamespaces, SpreadsheetML) {
     EXPECT_EQ(OoxmlNamespaces::kSpreadsheetML,
-        "http://schemas.openxmlformats.org/spreadsheetml/2006/main");
+              "http://schemas.openxmlformats.org/spreadsheetml/2006/main");
 }
 
 TEST(OoxmlNamespaces, DrawingML) {
-    EXPECT_EQ(OoxmlNamespaces::kDrawingML,
-        "http://schemas.openxmlformats.org/drawingml/2006/main");
+    EXPECT_EQ(OoxmlNamespaces::kDrawingML, "http://schemas.openxmlformats.org/drawingml/2006/main");
 }
 
 TEST(OoxmlNamespaces, PrefixMapContainsCorePrefixes) {

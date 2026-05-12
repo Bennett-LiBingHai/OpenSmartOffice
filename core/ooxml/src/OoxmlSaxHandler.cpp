@@ -1,25 +1,23 @@
 #include "oso/ooxml/OoxmlSaxHandler.h"
-#include"oso/ooxml/ElementFactory.h"
+
+#include "oso/ooxml/ElementFactory.h"
+
 #include <cstring>
 
 namespace oso {
-
 
 // ============================================================
 // OoxmlSaxHandler 实现
 // ============================================================
 
-OoxmlSaxHandler::OoxmlSaxHandler(const std::string& documentType)
-    : m_documentType(documentType) {
+OoxmlSaxHandler::OoxmlSaxHandler(const std::string& documentType) : m_documentType(documentType) {
     // 初始化 ElementFactory（触发静态注册）
     ElementFactory::instance();
 }
 
 IOoxmlReader::StartElementFn OoxmlSaxHandler::onStartElement() {
-    return [this](const std::string& namespaceUri,
-                  const std::string& localName,
-                  const std::string& /*qName*/,
-                  const std::vector<XmlAttribute>& attributes) {
+    return [this](const std::string& namespaceUri, const std::string& localName,
+                  const std::string& /*qName*/, const std::vector<XmlAttribute>& attributes) {
         // 通过工厂创建 DOM 节点
         auto node = ElementFactory::instance().create(namespaceUri, localName);
 
@@ -49,8 +47,7 @@ IOoxmlReader::StartElementFn OoxmlSaxHandler::onStartElement() {
 }
 
 IOoxmlReader::EndElementFn OoxmlSaxHandler::onEndElement() {
-    return [this](const std::string& /*namespaceUri*/,
-                  const std::string& /*localName*/,
+    return [this](const std::string& /*namespaceUri*/, const std::string& /*localName*/,
                   const std::string& /*qName*/) {
         if (!m_stack.empty()) {
             m_stack.pop();
@@ -60,7 +57,8 @@ IOoxmlReader::EndElementFn OoxmlSaxHandler::onEndElement() {
 
 IOoxmlReader::CharactersFn OoxmlSaxHandler::onCharacters() {
     return [this](const std::string& text) {
-        if (m_stack.empty()) return;
+        if (m_stack.empty())
+            return;
 
         bool isWhitespaceOnly = true;
         for (unsigned char c : text) {
@@ -98,4 +96,4 @@ std::unique_ptr<DomNode> OoxmlSaxHandler::releaseDocument() {
     return std::move(m_document);
 }
 
-} // namespace oso
+}  // namespace oso

@@ -1,15 +1,17 @@
 #include "oso/facade/DocumentFacade.h"
+
+#include "oso/base/ErrorCode.h"
+#include "oso/dom/word/WordDocument.h"
+#include "oso/io/IStream.h"
+#include "oso/ooxml/OoxmlSaxHandler.h"
+#include "oso/ooxml/common/ContentTypeRegistry.h"
 #include "oso/ooxml/common/IZipArchive.h"
 #include "oso/ooxml/common/LibzipZipArchive.h"
-#include "oso/ooxml/common/ContentTypeRegistry.h"
-#include "oso/ooxml/common/RelationshipMap.h"
 #include "oso/ooxml/common/OoxmlNamespaces.h"
-#include "oso/dom/word/WordDocument.h"
+#include "oso/ooxml/common/RelationshipMap.h"
 #include "oso/ooxml/read/Libxml2Reader.h"
 #include "oso/ooxml/write/Libxml2Writer.h"
-#include "oso/ooxml/OoxmlSaxHandler.h"
-#include "oso/io/IStream.h"
-#include "oso/base/ErrorCode.h"
+
 #include <cstring>
 
 namespace oso {
@@ -34,22 +36,25 @@ Result<std::string> DocumentFacade::detectDocumentType(IZipArchive& archive) {
 
     // 尝试通过已知部件查询 MIME 类型
     auto wdResult = ct.getTypeForPart("word/document.xml");
-    if (wdResult.isOk() && wdResult.value() == ContentTypeRegistry::lookupOverride("word/document.xml")) {
+    if (wdResult.isOk() &&
+        wdResult.value() == ContentTypeRegistry::lookupOverride("word/document.xml")) {
         return Result<std::string>::ok("word");
     }
 
     auto wbResult = ct.getTypeForPart("xl/workbook.xml");
-    if (wbResult.isOk() && wbResult.value() == ContentTypeRegistry::lookupOverride("xl/workbook.xml")) {
+    if (wbResult.isOk() &&
+        wbResult.value() == ContentTypeRegistry::lookupOverride("xl/workbook.xml")) {
         return Result<std::string>::ok("sheet");
     }
 
     auto presResult = ct.getTypeForPart("ppt/presentation.xml");
-    if (presResult.isOk() && presResult.value() == ContentTypeRegistry::lookupOverride("ppt/presentation.xml")) {
+    if (presResult.isOk() &&
+        presResult.value() == ContentTypeRegistry::lookupOverride("ppt/presentation.xml")) {
         return Result<std::string>::ok("slide");
     }
 
     return Result<std::string>::err(ErrorCode::OOXML_InvalidSchema,
-        "Unable to detect document type");
+                                    "Unable to detect document type");
 }
 
 // ============================================================
@@ -77,7 +82,7 @@ Result<std::unique_ptr<DomNode>> DocumentFacade::openDocument(const std::string&
     }
 
     return Result<std::unique_ptr<DomNode>>::err(ErrorCode::OOXML_InvalidSchema,
-        "Unsupported document type: " + docType);
+                                                 "Unsupported document type: " + docType);
 }
 
 // ============================================================
@@ -93,15 +98,15 @@ Result<std::unique_ptr<DomNode>> DocumentFacade::loadWordDocument(IZipArchive& a
 
     auto relsParseResult = RelationshipMap::parse(relsResult.value());
     if (relsParseResult.isErr()) {
-        return Result<std::unique_ptr<DomNode>>::err(
-            relsParseResult.error(), relsParseResult.message());
+        return Result<std::unique_ptr<DomNode>>::err(relsParseResult.error(),
+                                                     relsParseResult.message());
     }
 
     auto& rels = relsParseResult.value();
     auto docRelations = rels.getAllByType(OoxmlNamespaces::kRelOfficeDocument);
     if (docRelations.empty()) {
         return Result<std::unique_ptr<DomNode>>::err(ErrorCode::OOXML_MissingPart,
-            "No officeDocument relationship found");
+                                                     "No officeDocument relationship found");
     }
 
     std::string docPartPath = docRelations[0]->target;
@@ -116,11 +121,8 @@ Result<std::unique_ptr<DomNode>> DocumentFacade::loadWordDocument(IZipArchive& a
     OoxmlSaxHandler handler("word");
     Libxml2Reader reader;
 
-    auto parseResult = reader.parse(
-        docXmlResult.value(),
-        handler.onStartElement(),
-        handler.onEndElement(),
-        handler.onCharacters());
+    auto parseResult = reader.parse(docXmlResult.value(), handler.onStartElement(),
+                                    handler.onEndElement(), handler.onCharacters());
 
     if (parseResult.isErr()) {
         return Result<std::unique_ptr<DomNode>>::err(parseResult.error(), parseResult.message());
@@ -140,15 +142,15 @@ Result<void> DocumentFacade::saveDocument(const DomNode& doc, const std::string&
     }
 
     const auto& docType = dynamic_cast<const DomDocument*>(&doc)
-        ? dynamic_cast<const DomDocument*>(&doc)->documentType()
-        : "word";
+                              ? dynamic_cast<const DomDocument*>(&doc)->documentType()
+                              : "word";
 
     if (docType == "word") {
         return saveWordDocument(doc, path);
     }
 
     return Result<void>::err(ErrorCode::OOXML_InvalidSchema,
-        "Unsupported document type: " + docType);
+                             "Unsupported document type: " + docType);
 }
 
 // ============================================================
@@ -179,22 +181,26 @@ Result<void> DocumentFacade::saveWordDocument(const DomNode& doc, const std::str
     // 2a. 首先写 [Content_Types].xml
     auto ctXml = ContentTypeRegistry::generate({"word/document.xml"});
     auto ctWriteResult = archive.writeEntry("[Content_Types].xml", ctXml);
-    if (ctWriteResult.isErr()) return ctWriteResult;
+    if (ctWriteResult.isErr())
+        return ctWriteResult;
 
     // std::vector<>
 
     // 2b. 写 _rels/.rels
     auto relsXml = RelationshipMap::generate({
-        oso::RelationshipMap::Relationship("rId1", std::string(OoxmlNamespaces::kRelOfficeDocument), "word/document.xml", false),
+        oso::RelationshipMap::Relationship("rId1", std::string(OoxmlNamespaces::kRelOfficeDocument),
+                                           "word/document.xml", false),
     });
     auto relsWriteResult = archive.writeEntry("_rels/.rels", relsXml);
-    if (relsWriteResult.isErr()) return relsWriteResult;
+    if (relsWriteResult.isErr())
+        return relsWriteResult;
 
     // 2c. 最后写 word/document.xml
     auto docWriteResult = archive.writeEntry("word/document.xml", docStream.data());
-    if (docWriteResult.isErr()) return docWriteResult;
+    if (docWriteResult.isErr())
+        return docWriteResult;
 
     return archive.close();
 }
 
-} // namespace oso
+}  // namespace oso

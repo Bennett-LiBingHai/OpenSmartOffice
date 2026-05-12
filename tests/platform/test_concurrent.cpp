@@ -1,7 +1,8 @@
-#include <gtest/gtest.h>
+#include "oso/base/ErrorCode.h"
 #include "oso/concurrent/ITaskExecutor.h"
 #include "oso/concurrent/QtTaskExecutor.h"
-#include "oso/base/ErrorCode.h"
+
+#include <gtest/gtest.h>
 
 #include <atomic>
 #include <chrono>
@@ -76,9 +77,7 @@ TEST(QtTaskExecutor, WaitAllTimeout) {
     QtTaskExecutor executor;
 
     // 提交一个长任务
-    executor.submit([] {
-        std::this_thread::sleep_for(500ms);
-    });
+    executor.submit([] { std::this_thread::sleep_for(500ms); });
 
     // 只等 10ms，应该超时
     auto result = executor.waitAll(10ms);
@@ -110,7 +109,7 @@ TEST(QtTaskExecutor, WaitAllZeroTimeoutWaitsForever) {
 // ================================================================
 
 TEST(QtTaskExecutor, HighPriorityTasksRunBeforeLowPriority) {
-    QtTaskExecutor executor(1); // 单线程：队列顺序即执行顺序
+    QtTaskExecutor executor(1);  // 单线程：队列顺序即执行顺序
     auto orderPtr = std::make_shared<std::vector<int>>();
     auto mtx = std::make_shared<std::mutex>();
     std::atomic<bool> gate{false};
@@ -125,15 +124,19 @@ TEST(QtTaskExecutor, HighPriorityTasksRunBeforeLowPriority) {
     // 等 blocker 开始执行，后续提交的任务进入等待队列
     std::this_thread::sleep_for(10ms);
 
-    executor.submit([orderPtr, mtx] {
-        std::lock_guard<std::mutex> lock(*mtx);
-        orderPtr->push_back(0);
-    }, 0); // 低优先级 — 先进队列
+    executor.submit(
+        [orderPtr, mtx] {
+            std::lock_guard<std::mutex> lock(*mtx);
+            orderPtr->push_back(0);
+        },
+        0);  // 低优先级 — 先进队列
 
-    executor.submit([orderPtr, mtx] {
-        std::lock_guard<std::mutex> lock(*mtx);
-        orderPtr->push_back(1);
-    }, 10); // 高优先级 — 后进队列，但应被优先取出
+    executor.submit(
+        [orderPtr, mtx] {
+            std::lock_guard<std::mutex> lock(*mtx);
+            orderPtr->push_back(1);
+        },
+        10);  // 高优先级 — 后进队列，但应被优先取出
 
     gate = true;
     executor.waitAll();
@@ -205,14 +208,10 @@ TEST(QtTaskExecutor, TaskThrowsException) {
     std::atomic<bool> afterException{false};
 
     // 提交会抛异常的任务
-    executor.submit([] {
-        throw std::runtime_error("task error");
-    });
+    executor.submit([] { throw std::runtime_error("task error"); });
 
     // 再提交正常任务
-    executor.submit([&afterException] {
-        afterException = true;
-    });
+    executor.submit([&afterException] { afterException = true; });
 
     // waitAll 不应崩溃（QtConcurrent 会捕获异常并存储在 QFuture 中）
     auto result = executor.waitAll();
@@ -234,7 +233,7 @@ TEST(QtTaskExecutor, DestructorWaitsForAll) {
             std::this_thread::sleep_for(100ms);
             taskCompleted = true;
         });
-    } // executor 析构，应等待任务完成
+    }  // executor 析构，应等待任务完成
 
     EXPECT_TRUE(taskCompleted);
 }
@@ -282,7 +281,7 @@ TEST(ITaskExecutor, PolymorphicUse) {
 // ================================================================
 
 TEST(QtTaskExecutor, TasksExecuteInParallel) {
-    QtTaskExecutor executor(4); // 最多 4 线程
+    QtTaskExecutor executor(4);  // 最多 4 线程
 
     std::atomic<int> maxConcurrency{0};
     std::atomic<int> inFlight{0};
@@ -293,8 +292,7 @@ TEST(QtTaskExecutor, TasksExecuteInParallel) {
             int current = inFlight.fetch_add(1) + 1;
             // 更新最大并发数
             int prev = maxConcurrency.load();
-            while (current > prev &&
-                   !maxConcurrency.compare_exchange_weak(prev, current)) {
+            while (current > prev && !maxConcurrency.compare_exchange_weak(prev, current)) {
             }
             std::this_thread::sleep_for(50ms);
             inFlight.fetch_sub(1);

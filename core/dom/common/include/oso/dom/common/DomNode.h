@@ -1,6 +1,7 @@
 #pragma once
 
 #include "oso/base/Result.h"
+
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -14,9 +15,9 @@ namespace oso {
 // DomNodeType — DOM 节点类型枚举
 // ============================================================
 enum class DomNodeType : uint8_t {
-    Document,    // 文档根节点
-    Element,     // 泛型元素节点
-    Text,        // 文本节点
+    Document,  // 文档根节点
+    Element,  // 泛型元素节点
+    Text,  // 文本节点
 };
 
 // ============================================================
@@ -31,24 +32,30 @@ enum class DomNodeType : uint8_t {
 // 未识别的属性和子元素作为 DomElement 存储，round-trip 不丢失。
 // ============================================================
 class DomNode {
-public:
-    explicit DomNode(DomNodeType type)
-        : m_nodeType(type) {}
+   public:
+    explicit DomNode(DomNodeType type) : m_nodeType(type) {
+    }
     virtual ~DomNode() = default;
 
     // ---- 树结构操作 ----
 
     /// 获取父节点指针，根节点返回 nullptr
-    DomNode* parent() const { return m_parent; }
+    DomNode* parent() const {
+        return m_parent;
+    }
 
     /// 添加子节点，自动设置子节点的父指针
     void appendChild(std::unique_ptr<DomNode> child);
 
     /// 获取所有子节点（只读）
-    const std::vector<std::unique_ptr<DomNode>>& children() const { return m_children; }
+    const std::vector<std::unique_ptr<DomNode>>& children() const {
+        return m_children;
+    }
 
     /// 获取子节点数量
-    size_t childCount() const { return m_children.size(); }
+    size_t childCount() const {
+        return m_children.size();
+    }
 
     /// 获取指定索引的子节点，越界返回 nullptr
     DomNode* childAt(size_t index) const;
@@ -56,15 +63,25 @@ public:
     // ---- 节点元数据 ----
 
     /// 节点类型
-    DomNodeType nodeType() const { return m_nodeType; }
+    DomNodeType nodeType() const {
+        return m_nodeType;
+    }
 
     /// 节点本地名称（不含前缀），如 "p", "r", "t"
-    const std::string& localName() const { return m_localName; }
-    void setLocalName(const std::string& name) { m_localName = name; }
+    const std::string& localName() const {
+        return m_localName;
+    }
+    void setLocalName(const std::string& name) {
+        m_localName = name;
+    }
 
     /// 命名空间 URI（如 wordprocessingml 的完整 URI）
-    const std::string& namespaceUri() const { return m_namespaceUri; }
-    void setNamespaceUri(const std::string& uri) { m_namespaceUri = uri; }
+    const std::string& namespaceUri() const {
+        return m_namespaceUri;
+    }
+    void setNamespaceUri(const std::string& uri) {
+        m_namespaceUri = uri;
+    }
 
     // ---- 属性系统（无损读写核心）----
 
@@ -88,7 +105,7 @@ public:
     /// 子类重写此方法以控制元素名、属性和子节点的写出逻辑
     virtual void serialize(class IOoxmlWriter& writer) const;
 
-protected:
+   protected:
     /// 写出当前元素的开始标签（含命名空间和属性），子类在 serialize() 中调用
     void serializeStartElement(IOoxmlWriter& writer) const;
 
@@ -96,12 +113,14 @@ protected:
     void serializeEndElement(IOoxmlWriter& writer) const;
 
     /// 设置父节点（仅 appendChild 调用）
-    void setParent(DomNode* parent) { m_parent = parent; }
+    void setParent(DomNode* parent) {
+        m_parent = parent;
+    }
 
     DomNodeType m_nodeType;
     std::string m_localName;
     std::string m_namespaceUri;
-    std::unordered_map<std::string, std::string> m_attributes; //qName->value
+    std::unordered_map<std::string, std::string> m_attributes;  // qName->value
     DomNode* m_parent = nullptr;
     std::vector<std::unique_ptr<DomNode>> m_children;
 };
@@ -113,17 +132,23 @@ protected:
 // 如 <w:t>Hello</w:t> 中的 "Hello" 即为一个 DomText 节点。
 // ============================================================
 class DomText : public DomNode {
-public:
-    explicit DomText(std::string text = "")
-        : DomNode(DomNodeType::Text), m_text(std::move(text)) {}
+   public:
+    explicit DomText(std::string text = "") : DomNode(DomNodeType::Text), m_text(std::move(text)) {
+    }
 
-    const std::string& text() const { return m_text; }
-    void setText(const std::string& text) { m_text = text; }
-    void appendText(const std::string& text) { m_text += text; }
+    const std::string& text() const {
+        return m_text;
+    }
+    void setText(const std::string& text) {
+        m_text = text;
+    }
+    void appendText(const std::string& text) {
+        m_text += text;
+    }
 
     void serialize(IOoxmlWriter& writer) const override;
 
-private:
+   private:
     std::string m_text;
 };
 
@@ -134,9 +159,8 @@ private:
 // 保留全部原始属性、命名空间和子元素，确保 round-trip 不丢失数据。
 // ============================================================
 class DomElement : public DomNode {
-public:
-    explicit DomElement(const std::string& localName,
-                        const std::string& namespaceUri = "")
+   public:
+    explicit DomElement(const std::string& localName, const std::string& namespaceUri = "")
         : DomNode(DomNodeType::Element) {
         m_localName = localName;
         m_namespaceUri = namespaceUri;
@@ -150,19 +174,23 @@ public:
 // 包含文档类型信息，便于保存时确定输出格式。
 // ============================================================
 class DomDocument : public DomNode {
-public:
+   public:
     explicit DomDocument(const std::string& documentType = "")
-        : DomNode(DomNodeType::Document)
-        , m_documentType(documentType) {}
+        : DomNode(DomNodeType::Document), m_documentType(documentType) {
+    }
 
     /// 文档类型标识（如 "word", "sheet", "slide"）
-    const std::string& documentType() const { return m_documentType; }
-    void setDocumentType(const std::string& type) { m_documentType = type; }
+    const std::string& documentType() const {
+        return m_documentType;
+    }
+    void setDocumentType(const std::string& type) {
+        m_documentType = type;
+    }
 
     void serialize(IOoxmlWriter& writer) const override;
 
-private:
+   private:
     std::string m_documentType;
 };
 
-} // namespace oso
+}  // namespace oso

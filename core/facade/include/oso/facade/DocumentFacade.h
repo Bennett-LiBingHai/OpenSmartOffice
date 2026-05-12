@@ -2,6 +2,7 @@
 
 #include "oso/base/Result.h"
 #include "oso/dom/common/DomNode.h"
+
 #include <memory>
 #include <string>
 
@@ -17,7 +18,7 @@ namespace oso {
 // M1 阶段仅支持 Word (docx) 格式的打开和 round-trip。
 // ============================================================
 class DocumentFacade {
-public:
+   public:
     DocumentFacade() = default;
 
     /// 打开 OOXML 文档
@@ -31,7 +32,7 @@ public:
     /// @return 成功返回 OK
     Result<void> saveDocument(const DomNode& doc, const std::string& path);
 
-private:
+   private:
     /// 通过 [Content_Types].xml 检测文档类型
     /// @return "word" / "sheet" / "slide"
     static Result<std::string> detectDocumentType(class IZipArchive& archive);
@@ -43,4 +44,4 @@ private:
     Result<void> saveWordDocument(const DomNode& doc, const std::string& path);
 };
 
-} // namespace oso
+}  // namespace oso

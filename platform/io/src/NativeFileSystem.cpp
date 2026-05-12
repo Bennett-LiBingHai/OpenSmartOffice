@@ -1,8 +1,9 @@
+#include "oso/base/ErrorCode.h"
 #include "oso/io/IFileSystem.h"
 #include "oso/io/IStream.h"
-#include "oso/base/ErrorCode.h"
-#include <filesystem>
+
 #include <cstdio>
+#include <filesystem>
 
 namespace oso {
 
@@ -44,8 +45,7 @@ Result<void> NativeFileSystem::remove(const std::string& path) {
     return Result<void>::ok();
 }
 
-Result<std::vector<std::string>> NativeFileSystem::listDirectory(
-    const std::string& path) const {
+Result<std::vector<std::string>> NativeFileSystem::listDirectory(const std::string& path) const {
     std::vector<std::string> entries;
     std::error_code ec;
     for (const auto& entry : std::filesystem::directory_iterator(path, ec)) {
@@ -67,4 +67,4 @@ std::string NativeFileSystem::tempPath() const {
     return std::filesystem::temp_directory_path().string();
 }
 
-} // namespace oso
+}  // namespace oso

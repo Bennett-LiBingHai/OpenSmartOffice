@@ -1,9 +1,11 @@
-#include <gtest/gtest.h>
+#include "oso/base/ErrorCode.h"
+#include "oso/ooxml/common/ContentTypeRegistry.h"
 #include "oso/ooxml/common/IZipArchive.h"
 #include "oso/ooxml/common/LibzipZipArchive.h"
-#include "oso/ooxml/common/ContentTypeRegistry.h"
 #include "oso/ooxml/common/RelationshipMap.h"
-#include "oso/base/ErrorCode.h"
+
+#include <gtest/gtest.h>
+
 #include <algorithm>
 #include <cstdio>
 #include <filesystem>
@@ -17,15 +19,19 @@ namespace {
 struct TempFile {
     std::string path;
     bool isRemain;
-    explicit TempFile(std::string p,bool ir=false) : path(std::move(p)),isRemain(ir) {}
-    ~TempFile() { if(!isRemain)std::remove(path.c_str()); }
+    explicit TempFile(std::string p, bool ir = false) : path(std::move(p)), isRemain(ir) {
+    }
+    ~TempFile() {
+        if (!isRemain)
+            std::remove(path.c_str());
+    }
 };
 
 std::string tempPath(const std::string& name) {
     return (fs::temp_directory_path() / name).string();
 }
 
-} // anonymous namespace
+}  // anonymous namespace
 
 // ============================================================
 // LibzipZipArchive
@@ -66,16 +72,18 @@ TEST(LibzipZipArchive, EntriesList) {
     ASSERT_TRUE(entries.isOk()) << entries.message();
 
     auto& list = entries.value();
-    EXPECT_GE(list.size(), 3u); // At least [Content_Types].xml, _rels/.rels, word/document.xml
+    EXPECT_GE(list.size(), 3u);  // At least [Content_Types].xml, _rels/.rels, word/document.xml
 
     // Check that [Content_Types].xml is present
-    auto hasContentTypes = std::find_if(list.begin(), list.end(),
-        [](const IZipArchive::Entry& e) { return e.name == "[Content_Types].xml"; });
+    auto hasContentTypes = std::find_if(list.begin(), list.end(), [](const IZipArchive::Entry& e) {
+        return e.name == "[Content_Types].xml";
+    });
     EXPECT_NE(hasContentTypes, list.end());
 
     // Check that word/document.xml is present
-    auto hasDocument = std::find_if(list.begin(), list.end(),
-        [](const IZipArchive::Entry& e) { return e.name == "word/document.xml"; });
+    auto hasDocument = std::find_if(list.begin(), list.end(), [](const IZipArchive::Entry& e) {
+        return e.name == "word/document.xml";
+    });
     EXPECT_NE(hasDocument, list.end());
 }
 
@@ -89,7 +97,8 @@ TEST(LibzipZipArchive, ReadEntry) {
 
     // Verify it's XML by checking first bytes
     std::string content(reinterpret_cast<const char*>(data.value().data()), data.value().size());
-    EXPECT_TRUE(content.find("<?xml") != std::string::npos || content.find("<Types") != std::string::npos);
+    EXPECT_TRUE(content.find("<?xml") != std::string::npos ||
+                content.find("<Types") != std::string::npos);
 }
 
 TEST(LibzipZipArchive, ReadMissingEntry) {
@@ -131,7 +140,8 @@ TEST(ContentTypeRegistry, GetTypeForPartByOverride) {
 
     auto type = ctResult.value().getTypeForPart("word/document.xml");
     ASSERT_TRUE(type.isOk()) << type.message();
-    EXPECT_EQ(type.value(), "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml");
+    EXPECT_EQ(type.value(),
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml");
 }
 
 TEST(ContentTypeRegistry, GetTypeForExtension) {
@@ -275,7 +285,8 @@ TEST(IntegrationTest, OpenDocxAndListPartsWithMimeTypes) {
 
     // For each entry, try to get its MIME type
     for (const auto& entry : entries.value()) {
-        if (entry.isDirectory) continue;
+        if (entry.isDirectory)
+            continue;
         auto mimeType = ctResult.value().getTypeForPart(entry.name);
         // All parts should have a MIME type
         EXPECT_TRUE(mimeType.isOk())
@@ -435,8 +446,7 @@ TEST(ContentTypeRegistry, GenerateRoundTrip) {
     // _rels/.rels should resolve via "rels" Default
     auto typeRels = result.value().getTypeForPart("_rels/.rels");
     ASSERT_TRUE(typeRels.isOk());
-    EXPECT_EQ(typeRels.value(),
-              "application/vnd.openxmlformats-package.relationships+xml");
+    EXPECT_EQ(typeRels.value(), "application/vnd.openxmlformats-package.relationships+xml");
 }
 
 TEST(ContentTypeRegistry, GenerateIncludesDefaults) {
@@ -480,7 +490,8 @@ TEST(ContentTypeRegistry, GeneratePrefixMatch) {
 
     auto t1 = result.value().getTypeForPart("xl/worksheets/sheet1.xml");
     ASSERT_TRUE(t1.isOk());
-    EXPECT_EQ(t1.value(), "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml");
+    EXPECT_EQ(t1.value(),
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml");
 
     auto t2 = result.value().getTypeForPart("xl/worksheets/sheet2.xml");
     ASSERT_TRUE(t2.isOk());
@@ -495,8 +506,7 @@ TEST(RelationshipMap, GenerateRoundTrip) {
     std::vector<RelationshipMap::Relationship> rels = {
         {"rId1",
          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument",
-         "word/document.xml",
-         false},
+         "word/document.xml", false},
     };
 
     auto xmlData = RelationshipMap::generate(rels);
@@ -612,10 +622,12 @@ TEST(IntegrationTest, WriteOrderContentTypesFirst) {
 
     auto ctXml = ContentTypeRegistry::generate({"word/document.xml"});
     ASSERT_TRUE(writer.writeEntry("[Content_Types].xml", ctXml).isOk());
-    ASSERT_TRUE(writer.writeEntry("_rels/.rels",
-        RelationshipMap::generate({
-            {"rId1", kOfficeDocRel, "word/document.xml", false},
-        })).isOk());
+    ASSERT_TRUE(
+        writer
+            .writeEntry("_rels/.rels", RelationshipMap::generate({
+                                           {"rId1", kOfficeDocRel, "word/document.xml", false},
+                                       }))
+            .isOk());
     ASSERT_TRUE(writer.writeEntry("word/document.xml", makeMinimalDocumentXml()).isOk());
     ASSERT_TRUE(writer.close().isOk());
 
@@ -637,10 +649,12 @@ TEST(IntegrationTest, AllPartsHaveValidMimeTypes) {
     auto ctXml = ContentTypeRegistry::generate({"word/document.xml"});
     // std::cout<<std::string(ctXml.begin(),ctXml.end());
     ASSERT_TRUE(writer.writeEntry("[Content_Types].xml", ctXml).isOk());
-    ASSERT_TRUE(writer.writeEntry("_rels/.rels",
-        RelationshipMap::generate({
-            {"rId1", kOfficeDocRel, "word/document.xml", false},
-        })).isOk());
+    ASSERT_TRUE(
+        writer
+            .writeEntry("_rels/.rels", RelationshipMap::generate({
+                                           {"rId1", kOfficeDocRel, "word/document.xml", false},
+                                       }))
+            .isOk());
     ASSERT_TRUE(writer.writeEntry("word/document.xml", makeMinimalDocumentXml()).isOk());
     ASSERT_TRUE(writer.close().isOk());
 
@@ -656,10 +670,11 @@ TEST(IntegrationTest, AllPartsHaveValidMimeTypes) {
     ASSERT_TRUE(ctParsed.isOk());
 
     for (const auto& entry : entries.value()) {
-        if (entry.isDirectory) continue;
+        if (entry.isDirectory)
+            continue;
         // std::cout<<entry.name<<std::endl;
         auto mime = ctParsed.value().getTypeForPart(entry.name);
-        EXPECT_TRUE(mime.isOk())<<mime.message();
+        EXPECT_TRUE(mime.isOk()) << mime.message();
     }
 }
 
@@ -701,7 +716,8 @@ static std::vector<uint8_t> makeCorePropsXml() {
 static std::vector<uint8_t> makeAppPropsXml() {
     const char* xml =
         "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
-        "<Properties xmlns=\"http://schemas.openxmlformats.org/officeDocument/2006/extended-properties\"/>";
+        "<Properties "
+        "xmlns=\"http://schemas.openxmlformats.org/officeDocument/2006/extended-properties\"/>";
     return strToBytes(xml);
 }
 
@@ -731,7 +747,8 @@ static std::vector<uint8_t> makeFontTableXml() {
 static std::vector<uint8_t> makeThemeXml() {
     const char* xml =
         "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
-        "<a:theme xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" name=\"Default\">"
+        "<a:theme xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" "
+        "name=\"Default\">"
         "<a:themeElements>"
         "<a:clrScheme name=\"Default\"><a:dk1><a:sysClr val=\"000000\" lastClr=\"000000\"/></a:dk1>"
         "<a:lt1><a:sysClr val=\"FFFFFF\" lastClr=\"FFFFFF\"/></a:lt1>"
@@ -747,8 +764,10 @@ static std::vector<uint8_t> makeThemeXml() {
         "<a:folHlink><a:srgbClr val=\"954F72\"/></a:folHlink>"
         "</a:clrScheme>"
         "<a:fontScheme name=\"Default\">"
-        "<a:majorFont><a:latin typeface=\"Calibri\"/><a:ea typeface=\"\"/><a:cs typeface=\"\"/></a:majorFont>"
-        "<a:minorFont><a:latin typeface=\"Calibri\"/><a:ea typeface=\"\"/><a:cs typeface=\"\"/></a:minorFont>"
+        "<a:majorFont><a:latin typeface=\"Calibri\"/><a:ea typeface=\"\"/><a:cs "
+        "typeface=\"\"/></a:majorFont>"
+        "<a:minorFont><a:latin typeface=\"Calibri\"/><a:ea typeface=\"\"/><a:cs "
+        "typeface=\"\"/></a:minorFont>"
         "</a:fontScheme>"
         "<a:fmtScheme name=\"Default\"><a:fillStyleLst>"
         "<a:solidFill><a:schemeClr val=\"phClr\"/></a:solidFill>"

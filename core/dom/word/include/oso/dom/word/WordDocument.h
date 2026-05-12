@@ -1,6 +1,7 @@
 #pragma once
 
 #include "oso/dom/common/DomNode.h"
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -15,7 +16,7 @@ namespace oso {
 // ============================================================
 class Body;
 class WordDocument : public DomDocument {
-public:
+   public:
     WordDocument();
 
     /// 获取文档正文（<w:body>）
@@ -34,7 +35,7 @@ public:
 // M1 阶段仅支持段落。
 // ============================================================
 class Body : public DomElement {
-public:
+   public:
     Body();
 
     /// 添加段落
@@ -56,7 +57,7 @@ public:
 // 段落属性（<w:pPr>）通过 attributes() 保留，不单独解析。
 // ============================================================
 class Paragraph : public DomElement {
-public:
+   public:
     Paragraph();
 
     /// 添加 Run（文字运行）
@@ -78,7 +79,7 @@ public:
 // 运行属性通过 attributes() 保留，不单独解析。
 // ============================================================
 class Run : public DomElement {
-public:
+   public:
     Run();
 
     /// 添加文本节点
@@ -100,11 +101,11 @@ public:
 // 属性 xml:space="preserve" 用于保留前导/尾随空白。
 // ============================================================
 class Text : public DomElement {
-public:
-    //初始化时自动增加一个默认构造的DomText节点
+   public:
+    // 初始化时自动增加一个默认构造的DomText节点
     explicit Text();
 
-    //返回文本节点，没有返回nullptr
+    // 返回文本节点，没有返回nullptr
     DomText* content() const;
     void setContent(std::unique_ptr<class DomText> content);
 
@@ -118,8 +119,8 @@ public:
 // M1 阶段作为泛型元素保留，不解构，保障 round-trip。
 // ============================================================
 class Section : public DomElement {
-public:
+   public:
     Section();
 };
 
-} // namespace oso
+}  // namespace oso

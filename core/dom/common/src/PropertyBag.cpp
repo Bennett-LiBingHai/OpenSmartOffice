@@ -1,6 +1,6 @@
-#include"oso/dom/common/PropertyBag.h"
+#include "oso/dom/common/PropertyBag.h"
 
-namespace oso{
+namespace oso {
 
 const std::string PropertyBag::kEmpty;
 }

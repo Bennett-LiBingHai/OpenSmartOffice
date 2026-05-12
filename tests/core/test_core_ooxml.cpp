@@ -1,23 +1,25 @@
-#include <gtest/gtest.h>
-#include "oso/facade/DocumentFacade.h"
+#include "oso/base/ErrorCode.h"
 #include "oso/dom/common/DomNode.h"
 #include "oso/dom/word/WordDocument.h"
-#include "oso/ooxml/OoxmlSaxHandler.h"
+#include "oso/facade/DocumentFacade.h"
+#include "oso/io/IStream.h"
 #include "oso/ooxml/ElementFactory.h"
-#include "oso/ooxml/read/Libxml2Reader.h"
-#include "oso/ooxml/write/Libxml2Writer.h"
+#include "oso/ooxml/OoxmlSaxHandler.h"
+#include "oso/ooxml/common/ContentTypeRegistry.h"
 #include "oso/ooxml/common/IZipArchive.h"
 #include "oso/ooxml/common/LibzipZipArchive.h"
-#include "oso/ooxml/common/ContentTypeRegistry.h"
-#include "oso/ooxml/common/RelationshipMap.h"
 #include "oso/ooxml/common/OoxmlNamespaces.h"
-#include "oso/io/IStream.h"
-#include "oso/base/ErrorCode.h"
+#include "oso/ooxml/common/RelationshipMap.h"
+#include "oso/ooxml/read/Libxml2Reader.h"
+#include "oso/ooxml/write/Libxml2Writer.h"
+
+#include <gtest/gtest.h>
+
 #include <cstdio>
-#include <filesystem>
-#include <sstream>
 #include <cstring>
+#include <filesystem>
 #include <set>
+#include <sstream>
 
 using namespace oso;
 namespace fs = std::filesystem;
@@ -28,8 +30,12 @@ namespace {
 struct TempFile {
     std::string path;
     bool isRemain;
-    explicit TempFile(std::string p, bool ir = false) : path(std::move(p)), isRemain(ir) {}
-    ~TempFile() { if (!isRemain) std::remove(path.c_str()); }
+    explicit TempFile(std::string p, bool ir = false) : path(std::move(p)), isRemain(ir) {
+    }
+    ~TempFile() {
+        if (!isRemain)
+            std::remove(path.c_str());
+    }
 };
 
 std::string tempPath(const std::string& name) {
@@ -85,7 +91,7 @@ std::vector<uint8_t> makeDocXmlMultiRun() {
     return strToBytes(xml);
 }
 
-} // anonymous namespace
+}  // anonymous namespace
 
 // ================================================================
 // OoxmlSaxHandler — SAX → DOM 基本功能测试
@@ -96,22 +102,20 @@ TEST(OoxmlSaxHandler, ParseMinimalDocx) {
     OoxmlSaxHandler handler("word");
     Libxml2Reader reader;
 
-    auto result = reader.parse(xmlData,
-        handler.onStartElement(),
-        handler.onEndElement(),
-        handler.onCharacters());
+    auto result = reader.parse(xmlData, handler.onStartElement(), handler.onEndElement(),
+                               handler.onCharacters());
 
     ASSERT_TRUE(result.isOk()) << result.message();
 
     auto doc = handler.releaseDocument();
     ASSERT_NE(doc, nullptr);
     EXPECT_EQ(doc->localName(), "document");
-    EXPECT_EQ(doc->childCount(), 1u); // body
+    EXPECT_EQ(doc->childCount(), 1u);  // body
 
     auto* body = doc->childAt(0);
     ASSERT_NE(body, nullptr);
     EXPECT_EQ(body->localName(), "body");
-    EXPECT_GE(body->childCount(), 1u); // 至少一个 p
+    EXPECT_GE(body->childCount(), 1u);  // 至少一个 p
 
     auto* para = body->childAt(0);
     ASSERT_NE(para, nullptr);
@@ -123,10 +127,8 @@ TEST(OoxmlSaxHandler, ParseDocWithText) {
     OoxmlSaxHandler handler("word");
     Libxml2Reader reader;
 
-    auto result = reader.parse(xmlData,
-        handler.onStartElement(),
-        handler.onEndElement(),
-        handler.onCharacters());
+    auto result = reader.parse(xmlData, handler.onStartElement(), handler.onEndElement(),
+                               handler.onCharacters());
 
     ASSERT_TRUE(result.isOk()) << result.message();
 
@@ -159,17 +161,15 @@ TEST(OoxmlSaxHandler, ParseMultiParagraph) {
     OoxmlSaxHandler handler("word");
     Libxml2Reader reader;
 
-    auto result = reader.parse(xmlData,
-        handler.onStartElement(),
-        handler.onEndElement(),
-        handler.onCharacters());
+    auto result = reader.parse(xmlData, handler.onStartElement(), handler.onEndElement(),
+                               handler.onCharacters());
 
     ASSERT_TRUE(result.isOk()) << result.message();
 
     auto doc = handler.releaseDocument();
     auto* body = doc->childAt(0);
     ASSERT_NE(body, nullptr);
-    EXPECT_EQ(body->childCount(), 3u); // 三个段落
+    EXPECT_EQ(body->childCount(), 3u);  // 三个段落
 }
 
 TEST(OoxmlSaxHandler, ParseMultiRun) {
@@ -177,10 +177,8 @@ TEST(OoxmlSaxHandler, ParseMultiRun) {
     OoxmlSaxHandler handler("word");
     Libxml2Reader reader;
 
-    auto result = reader.parse(xmlData,
-        handler.onStartElement(),
-        handler.onEndElement(),
-        handler.onCharacters());
+    auto result = reader.parse(xmlData, handler.onStartElement(), handler.onEndElement(),
+                               handler.onCharacters());
 
     ASSERT_TRUE(result.isOk()) << result.message();
 
@@ -188,7 +186,7 @@ TEST(OoxmlSaxHandler, ParseMultiRun) {
     auto* body = doc->childAt(0);
     auto* para = body->childAt(0);
     ASSERT_NE(para, nullptr);
-    EXPECT_EQ(para->childCount(), 3u); // 三个 Run
+    EXPECT_EQ(para->childCount(), 3u);  // 三个 Run
 }
 
 // ================================================================
@@ -200,10 +198,10 @@ TEST(Serialize, MinimalDocRoundTrip) {
     auto xmlData = makeMinimalDocXml();
     OoxmlSaxHandler handler("word");
     Libxml2Reader reader;
-    ASSERT_TRUE(reader.parse(xmlData,
-        handler.onStartElement(),
-        handler.onEndElement(),
-        handler.onCharacters()).isOk());
+    ASSERT_TRUE(reader
+                    .parse(xmlData, handler.onStartElement(), handler.onEndElement(),
+                           handler.onCharacters())
+                    .isOk());
     auto doc = handler.releaseDocument();
 
     // 2. 序列化
@@ -217,10 +215,10 @@ TEST(Serialize, MinimalDocRoundTrip) {
 
     // 3. 重新解析序列化结果
     OoxmlSaxHandler handler2("word");
-    ASSERT_TRUE(reader.parse(stream.data(),
-        handler2.onStartElement(),
-        handler2.onEndElement(),
-        handler2.onCharacters()).isOk());
+    ASSERT_TRUE(reader
+                    .parse(stream.data(), handler2.onStartElement(), handler2.onEndElement(),
+                           handler2.onCharacters())
+                    .isOk());
     auto doc2 = handler2.releaseDocument();
 
     // 4. 验证结构一致
@@ -234,10 +232,10 @@ TEST(Serialize, DocWithTextRoundTrip) {
     auto xmlData = makeDocXmlWithText();
     OoxmlSaxHandler handler("word");
     Libxml2Reader reader;
-    ASSERT_TRUE(reader.parse(xmlData,
-        handler.onStartElement(),
-        handler.onEndElement(),
-        handler.onCharacters()).isOk());
+    ASSERT_TRUE(reader
+                    .parse(xmlData, handler.onStartElement(), handler.onEndElement(),
+                           handler.onCharacters())
+                    .isOk());
     auto doc = handler.releaseDocument();
 
     // 序列化
@@ -250,10 +248,10 @@ TEST(Serialize, DocWithTextRoundTrip) {
 
     // 重新解析
     OoxmlSaxHandler handler2("word");
-    ASSERT_TRUE(reader.parse(stream.data(),
-        handler2.onStartElement(),
-        handler2.onEndElement(),
-        handler2.onCharacters()).isOk());
+    ASSERT_TRUE(reader
+                    .parse(stream.data(), handler2.onStartElement(), handler2.onEndElement(),
+                           handler2.onCharacters())
+                    .isOk());
     auto doc2 = handler2.releaseDocument();
 
     // 验证文本内容
@@ -262,7 +260,7 @@ TEST(Serialize, DocWithTextRoundTrip) {
     auto* run = para->childAt(0);
     bool foundText = false;
     for (size_t i = 0; i < run->childCount(); ++i) {
-        if ( auto* textNode = static_cast<Text*>(run->childAt(i))) {
+        if (auto* textNode = static_cast<Text*>(run->childAt(i))) {
             EXPECT_EQ(textNode->content()->text(), "Hello OpenSmartOffice");
             foundText = true;
         }
@@ -328,10 +326,9 @@ TEST(OoxmlSaxHandler, WhitespaceOnlyTextDiscarded) {
 
     OoxmlSaxHandler handler("word");
     Libxml2Reader reader;
-    ASSERT_TRUE(reader.parse(data,
-        handler.onStartElement(),
-        handler.onEndElement(),
-        handler.onCharacters()).isOk());
+    ASSERT_TRUE(
+        reader.parse(data, handler.onStartElement(), handler.onEndElement(), handler.onCharacters())
+            .isOk());
 
     auto doc = handler.releaseDocument();
     auto* body = doc->childAt(0);
@@ -358,10 +355,9 @@ TEST(OoxmlSaxHandler, WhitespacePreservedWithXmlSpace) {
 
     OoxmlSaxHandler handler("word");
     Libxml2Reader reader;
-    ASSERT_TRUE(reader.parse(data,
-        handler.onStartElement(),
-        handler.onEndElement(),
-        handler.onCharacters()).isOk());
+    ASSERT_TRUE(
+        reader.parse(data, handler.onStartElement(), handler.onEndElement(), handler.onCharacters())
+            .isOk());
 
     auto doc = handler.releaseDocument();
     auto* body = doc->childAt(0);
@@ -392,10 +388,9 @@ TEST(OoxmlSaxHandler, TextMergingAdjacentTextNodes) {
     // 支持合并（通过 lastChild 检查和 appendText），所以验证文本是正确的即可
     OoxmlSaxHandler handler("word");
     Libxml2Reader reader;
-    ASSERT_TRUE(reader.parse(data,
-        handler.onStartElement(),
-        handler.onEndElement(),
-        handler.onCharacters()).isOk());
+    ASSERT_TRUE(
+        reader.parse(data, handler.onStartElement(), handler.onEndElement(), handler.onCharacters())
+            .isOk());
 
     auto doc = handler.releaseDocument();
     auto* body = doc->childAt(0);
@@ -413,19 +408,19 @@ TEST(OoxmlSaxHandler, ReleaseDocumentResetsState) {
     Libxml2Reader reader;
 
     // 第一次解析
-    ASSERT_TRUE(reader.parse(xmlData,
-        handler.onStartElement(),
-        handler.onEndElement(),
-        handler.onCharacters()).isOk());
+    ASSERT_TRUE(reader
+                    .parse(xmlData, handler.onStartElement(), handler.onEndElement(),
+                           handler.onCharacters())
+                    .isOk());
     auto doc1 = handler.releaseDocument();
     ASSERT_NE(doc1, nullptr);
-    EXPECT_EQ(handler.document(), nullptr); // 转移后内部应为空
+    EXPECT_EQ(handler.document(), nullptr);  // 转移后内部应为空
 
     // 第二次解析（复用 handler）
-    ASSERT_TRUE(reader.parse(xmlData,
-        handler.onStartElement(),
-        handler.onEndElement(),
-        handler.onCharacters()).isOk());
+    ASSERT_TRUE(reader
+                    .parse(xmlData, handler.onStartElement(), handler.onEndElement(),
+                           handler.onCharacters())
+                    .isOk());
     auto doc2 = handler.releaseDocument();
     ASSERT_NE(doc2, nullptr);
     EXPECT_EQ(doc2->localName(), "document");
@@ -443,10 +438,9 @@ TEST(OoxmlSaxHandler, ParseDeeplyNestedElements) {
 
     OoxmlSaxHandler handler("word");
     Libxml2Reader reader;
-    ASSERT_TRUE(reader.parse(data,
-        handler.onStartElement(),
-        handler.onEndElement(),
-        handler.onCharacters()).isOk());
+    ASSERT_TRUE(
+        reader.parse(data, handler.onStartElement(), handler.onEndElement(), handler.onCharacters())
+            .isOk());
 
     auto doc = handler.releaseDocument();
     ASSERT_NE(doc, nullptr);
@@ -457,7 +451,7 @@ TEST(OoxmlSaxHandler, ParseDeeplyNestedElements) {
     auto* run = para->childAt(0);
 
     // rPr 是 Run 属性，包含在 run 的元素中
-    ASSERT_GE(run->childCount(), 2u); // rPr + t（至少）
+    ASSERT_GE(run->childCount(), 2u);  // rPr + t（至少）
 }
 
 // ================================================================
@@ -498,10 +492,10 @@ TEST(Serialize, MultiParagraphRoundTrip) {
     auto xmlData = makeDocXmlMultiParagraph();
     OoxmlSaxHandler handler("word");
     Libxml2Reader reader;
-    ASSERT_TRUE(reader.parse(xmlData,
-        handler.onStartElement(),
-        handler.onEndElement(),
-        handler.onCharacters()).isOk());
+    ASSERT_TRUE(reader
+                    .parse(xmlData, handler.onStartElement(), handler.onEndElement(),
+                           handler.onCharacters())
+                    .isOk());
     auto doc = handler.releaseDocument();
 
     // 序列化
@@ -514,15 +508,15 @@ TEST(Serialize, MultiParagraphRoundTrip) {
 
     // 重新解析
     OoxmlSaxHandler handler2("word");
-    ASSERT_TRUE(reader.parse(stream.data(),
-        handler2.onStartElement(),
-        handler2.onEndElement(),
-        handler2.onCharacters()).isOk());
+    ASSERT_TRUE(reader
+                    .parse(stream.data(), handler2.onStartElement(), handler2.onEndElement(),
+                           handler2.onCharacters())
+                    .isOk());
     auto doc2 = handler2.releaseDocument();
 
     auto* body = doc2->childAt(0);
     ASSERT_NE(body, nullptr);
-    EXPECT_EQ(body->childCount(), 3u); // 三个段落
+    EXPECT_EQ(body->childCount(), 3u);  // 三个段落
 
     // 验证每段文字内容
     std::string expectedTexts[] = {"\xe7\xac\xac\xe4\xb8\x80\xe6\xae\xb5",
@@ -545,10 +539,10 @@ TEST(Serialize, DomDocumentSerializeProducesWellFormedXml) {
     auto xmlData = makeDocXmlWithText();
     OoxmlSaxHandler handler("word");
     Libxml2Reader reader;
-    ASSERT_TRUE(reader.parse(xmlData,
-        handler.onStartElement(),
-        handler.onEndElement(),
-        handler.onCharacters()).isOk());
+    ASSERT_TRUE(reader
+                    .parse(xmlData, handler.onStartElement(), handler.onEndElement(),
+                           handler.onCharacters())
+                    .isOk());
     auto doc = handler.releaseDocument();
 
     MemoryStream stream;
@@ -560,10 +554,8 @@ TEST(Serialize, DomDocumentSerializeProducesWellFormedXml) {
 
     // 验证序列化结果可被 libxml2 重新解析
     OoxmlSaxHandler handler2("word");
-    auto result = reader.parse(stream.data(),
-        handler2.onStartElement(),
-        handler2.onEndElement(),
-        handler2.onCharacters());
+    auto result = reader.parse(stream.data(), handler2.onStartElement(), handler2.onEndElement(),
+                               handler2.onCharacters());
     ASSERT_TRUE(result.isOk()) << "序列化结果不是 well-formed XML: " << result.message();
 }
 
@@ -651,10 +643,9 @@ TEST(IntegrationTest, AttributesSurviveRoundTrip) {
     // 解析
     OoxmlSaxHandler handler("word");
     Libxml2Reader reader;
-    ASSERT_TRUE(reader.parse(data,
-        handler.onStartElement(),
-        handler.onEndElement(),
-        handler.onCharacters()).isOk());
+    ASSERT_TRUE(
+        reader.parse(data, handler.onStartElement(), handler.onEndElement(), handler.onCharacters())
+            .isOk());
     auto doc = handler.releaseDocument();
 
     // 验证属性被保留
@@ -676,10 +667,10 @@ TEST(IntegrationTest, AttributesSurviveRoundTrip) {
 
     // 重新解析并验证属性仍存在
     OoxmlSaxHandler handler2("word");
-    ASSERT_TRUE(reader.parse(stream.data(),
-        handler2.onStartElement(),
-        handler2.onEndElement(),
-        handler2.onCharacters()).isOk());
+    ASSERT_TRUE(reader
+                    .parse(stream.data(), handler2.onStartElement(), handler2.onEndElement(),
+                           handler2.onCharacters())
+                    .isOk());
     auto doc2 = handler2.releaseDocument();
 
     auto* body2 = doc2->childAt(0);
@@ -718,9 +709,12 @@ TEST(IntegrationTest, GeneratedDocxHasCorrectZipStructure) {
     bool hasDocument = false;
 
     for (const auto& e : list) {
-        if (e.name == "[Content_Types].xml") hasContentTypes = true;
-        if (e.name == "_rels/.rels") hasRels = true;
-        if (e.name == "word/document.xml") hasDocument = true;
+        if (e.name == "[Content_Types].xml")
+            hasContentTypes = true;
+        if (e.name == "_rels/.rels")
+            hasRels = true;
+        if (e.name == "word/document.xml")
+            hasDocument = true;
     }
 
     EXPECT_TRUE(hasContentTypes) << "缺少 [Content_Types].xml";
@@ -737,7 +731,7 @@ TEST(IntegrationTest, GeneratedDocxHasCorrectZipStructure) {
     auto mimeType = ct.value().getTypeForPart("word/document.xml");
     ASSERT_TRUE(mimeType.isOk());
     EXPECT_EQ(mimeType.value(),
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml");
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml");
 }
 
 // ================================================================
@@ -766,16 +760,15 @@ TEST(IntegrationTest, RichDocumentRoundTrip) {
     // 解析
     OoxmlSaxHandler handler("word");
     Libxml2Reader reader;
-    ASSERT_TRUE(reader.parse(data,
-        handler.onStartElement(),
-        handler.onEndElement(),
-        handler.onCharacters()).isOk());
+    ASSERT_TRUE(
+        reader.parse(data, handler.onStartElement(), handler.onEndElement(), handler.onCharacters())
+            .isOk());
     auto doc = handler.releaseDocument();
 
     // 验证结构
     auto* body = doc->childAt(0);
     ASSERT_NE(body, nullptr);
-    EXPECT_EQ(body->childCount(), 2u); // 两个段落
+    EXPECT_EQ(body->childCount(), 2u);  // 两个段落
 
     // 第一段：3 个 Run
     auto* para1 = body->childAt(0);
@@ -793,10 +786,10 @@ TEST(IntegrationTest, RichDocumentRoundTrip) {
 
     // 重新解析
     OoxmlSaxHandler handler2("word");
-    ASSERT_TRUE(reader.parse(stream.data(),
-        handler2.onStartElement(),
-        handler2.onEndElement(),
-        handler2.onCharacters()).isOk());
+    ASSERT_TRUE(reader
+                    .parse(stream.data(), handler2.onStartElement(), handler2.onEndElement(),
+                           handler2.onCharacters())
+                    .isOk());
     auto doc2 = handler2.releaseDocument();
 
     // 重新验证结构
@@ -838,11 +831,8 @@ TEST(IntegrationTest, RoundTripZipEntriesMatch) {
     ASSERT_TRUE(newEntries.isOk());
 
     // 必须包含三个必要部件（允许不同结构，但不允许缺失）
-    std::set<std::string> requiredParts = {
-        "[Content_Types].xml",
-        "_rels/.rels",
-        "word/document.xml"
-    };
+    std::set<std::string> requiredParts = {"[Content_Types].xml", "_rels/.rels",
+                                           "word/document.xml"};
     for (const auto& e : newEntries.value()) {
         requiredParts.erase(e.name);
     }
@@ -856,10 +846,10 @@ TEST(IntegrationTest, EmptyDocRoundTrip) {
 
     OoxmlSaxHandler handler("word");
     Libxml2Reader reader;
-    ASSERT_TRUE(reader.parse(xmlData,
-        handler.onStartElement(),
-        handler.onEndElement(),
-        handler.onCharacters()).isOk());
+    ASSERT_TRUE(reader
+                    .parse(xmlData, handler.onStartElement(), handler.onEndElement(),
+                           handler.onCharacters())
+                    .isOk());
     auto doc = handler.releaseDocument();
 
     // 序列化 → 重新解析 → 验证结构
@@ -871,18 +861,18 @@ TEST(IntegrationTest, EmptyDocRoundTrip) {
     wordDoc->serialize(writer);
 
     OoxmlSaxHandler handler2("word");
-    ASSERT_TRUE(reader.parse(stream.data(),
-        handler2.onStartElement(),
-        handler2.onEndElement(),
-        handler2.onCharacters()).isOk());
+    ASSERT_TRUE(reader
+                    .parse(stream.data(), handler2.onStartElement(), handler2.onEndElement(),
+                           handler2.onCharacters())
+                    .isOk());
     auto doc2 = handler2.releaseDocument();
 
     ASSERT_NE(doc2, nullptr);
     EXPECT_EQ(doc2->localName(), "document");
-    EXPECT_EQ(doc2->childCount(), 1u); // body
+    EXPECT_EQ(doc2->childCount(), 1u);  // body
     auto* body2 = doc2->childAt(0);
     EXPECT_EQ(body2->localName(), "body");
-    EXPECT_GE(body2->childCount(), 1u); // 至少一个 p
+    EXPECT_GE(body2->childCount(), 1u);  // 至少一个 p
 }
 
 TEST(IntegrationTest, SerializeTextWithSpecialCharacters) {
@@ -890,15 +880,15 @@ TEST(IntegrationTest, SerializeTextWithSpecialCharacters) {
     const char* xml =
         "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
         "<w:document xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\">"
-        "<w:body><w:p><w:r><w:t>a &lt; b &amp;&amp; c &gt; d</w:t></w:r></w:p></w:body></w:document>";
+        "<w:body><w:p><w:r><w:t>a &lt; b &amp;&amp; c &gt; "
+        "d</w:t></w:r></w:p></w:body></w:document>";
     std::vector<uint8_t> data(xml, xml + std::strlen(xml));
 
     OoxmlSaxHandler handler("word");
     Libxml2Reader reader;
-    ASSERT_TRUE(reader.parse(data,
-        handler.onStartElement(),
-        handler.onEndElement(),
-        handler.onCharacters()).isOk());
+    ASSERT_TRUE(
+        reader.parse(data, handler.onStartElement(), handler.onEndElement(), handler.onCharacters())
+            .isOk());
     auto doc = handler.releaseDocument();
 
     // 获取文本内容
@@ -922,10 +912,10 @@ TEST(IntegrationTest, SerializeTextWithSpecialCharacters) {
 
     // 重新解析，验证文本完整
     OoxmlSaxHandler handler2("word");
-    ASSERT_TRUE(reader.parse(stream.data(),
-        handler2.onStartElement(),
-        handler2.onEndElement(),
-        handler2.onCharacters()).isOk());
+    ASSERT_TRUE(reader
+                    .parse(stream.data(), handler2.onStartElement(), handler2.onEndElement(),
+                           handler2.onCharacters())
+                    .isOk());
     auto doc2 = handler2.releaseDocument();
 
     auto* body2 = doc2->childAt(0);

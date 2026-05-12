@@ -1,9 +1,11 @@
-#include <gtest/gtest.h>
-#include "oso/io/IStream.h"
 #include "oso/base/ErrorCode.h"
 #include "oso/io/IFileSystem.h"
-#include <fstream>
+#include "oso/io/IStream.h"
+
+#include <gtest/gtest.h>
+
 #include <filesystem>
+#include <fstream>
 
 using namespace oso;
 
@@ -61,7 +63,7 @@ TEST(MemoryStream, ReadMoreThanAvailable) {
     uint8_t buf[10] = {};
     auto r = stream.read(buf, 10);
     EXPECT_TRUE(r.isOk());
-    EXPECT_EQ(r.value(), 3); // only 3 available
+    EXPECT_EQ(r.value(), 3);  // only 3 available
     EXPECT_EQ(stream.tell().value(), 3);
 }
 
@@ -71,7 +73,7 @@ TEST(MemoryStream, ReadFromEmptyStream) {
     uint8_t buf[4] = {};
     auto r = stream.read(buf, 4);
     EXPECT_TRUE(r.isOk());
-    EXPECT_EQ(r.value(), 0); // nothing to read
+    EXPECT_EQ(r.value(), 0);  // nothing to read
 }
 
 TEST(MemoryStream, ReadAtEof) {
@@ -79,7 +81,7 @@ TEST(MemoryStream, ReadAtEof) {
     MemoryStream stream(input);
 
     uint8_t buf[3] = {};
-    stream.read(buf, 3); // consume all
+    stream.read(buf, 3);  // consume all
 
     auto r = stream.read(buf, 1);
     EXPECT_TRUE(r.isOk());
@@ -95,7 +97,7 @@ TEST(MemoryStream, ReadAll) {
     MemoryStream stream(input);
 
     // seek to middle, then readAll should return remaining
-    stream.seek(2, StreamSeek::START); // SEEK_SET
+    stream.seek(2, StreamSeek::START);  // SEEK_SET
 
     auto r = stream.readAll();
     EXPECT_TRUE(r.isOk());
@@ -160,7 +162,7 @@ TEST(MemoryStream, WriteExtendsData) {
     MemoryStream stream(input);
 
     // seek to end and write more
-    stream.seek(0, StreamSeek::END); // SEEK_END
+    stream.seek(0, StreamSeek::END);  // SEEK_END
     uint8_t data[] = {4, 5};
     stream.write(data, 2);
 
@@ -176,11 +178,11 @@ TEST(MemoryStream, WriteAtMiddleOverwrites) {
     std::vector<uint8_t> input = {1, 2, 3, 4, 5};
     MemoryStream stream(input);
 
-    stream.seek(2, StreamSeek::START); // SEEK_SET to position 2
+    stream.seek(2, StreamSeek::START);  // SEEK_SET to position 2
     uint8_t data[] = {0xAA, 0xBB};
     stream.write(data, 2);
 
-    EXPECT_EQ(stream.size().value(), 5); // still 5, no expansion
+    EXPECT_EQ(stream.size().value(), 5);  // still 5, no expansion
     stream.seek(0, StreamSeek::START);
     auto all = stream.readAll();
     EXPECT_EQ(all.value()[0], 1);
@@ -221,7 +223,7 @@ TEST(MemoryStream, SeekSet) {
     std::vector<uint8_t> input = {10, 20, 30, 40, 50};
     MemoryStream stream(input);
 
-    auto r = stream.seek(3, StreamSeek::START); // SEEK_SET
+    auto r = stream.seek(3, StreamSeek::START);  // SEEK_SET
     EXPECT_TRUE(r.isOk());
     EXPECT_EQ(r.value(), 3);
     EXPECT_EQ(stream.tell().value(), 3);
@@ -231,8 +233,8 @@ TEST(MemoryStream, SeekCurForward) {
     std::vector<uint8_t> input = {10, 20, 30, 40, 50};
     MemoryStream stream(input);
 
-    stream.seek(2, StreamSeek::START);         // to pos 2
-    auto r = stream.seek(1, StreamSeek::CUR); // SEEK_CUR forward 1
+    stream.seek(2, StreamSeek::START);  // to pos 2
+    auto r = stream.seek(1, StreamSeek::CUR);  // SEEK_CUR forward 1
     EXPECT_TRUE(r.isOk());
     EXPECT_EQ(r.value(), 3);
 }
@@ -241,8 +243,8 @@ TEST(MemoryStream, SeekCurBackward) {
     std::vector<uint8_t> input = {10, 20, 30, 40, 50};
     MemoryStream stream(input);
 
-    stream.seek(4, StreamSeek::START);          // to pos 4
-    auto r = stream.seek(-2, StreamSeek::CUR); // SEEK_CUR back 2
+    stream.seek(4, StreamSeek::START);  // to pos 4
+    auto r = stream.seek(-2, StreamSeek::CUR);  // SEEK_CUR back 2
     EXPECT_TRUE(r.isOk());
     EXPECT_EQ(r.value(), 2);
 }
@@ -251,7 +253,7 @@ TEST(MemoryStream, SeekEnd) {
     std::vector<uint8_t> input = {10, 20, 30, 40, 50};
     MemoryStream stream(input);
 
-    auto r = stream.seek(0, StreamSeek::END); // SEEK_END
+    auto r = stream.seek(0, StreamSeek::END);  // SEEK_END
     EXPECT_TRUE(r.isOk());
     EXPECT_EQ(r.value(), 5);
 }
@@ -260,7 +262,7 @@ TEST(MemoryStream, SeekEndNegativeOffset) {
     std::vector<uint8_t> input = {10, 20, 30, 40, 50};
     MemoryStream stream(input);
 
-    auto r = stream.seek(-2, StreamSeek::END); // SEEK_END minus 2
+    auto r = stream.seek(-2, StreamSeek::END);  // SEEK_END minus 2
     EXPECT_TRUE(r.isOk());
     EXPECT_EQ(r.value(), 3);
 }
@@ -269,7 +271,7 @@ TEST(MemoryStream, SeekSetNegative) {
     std::vector<uint8_t> input = {1, 2, 3};
     MemoryStream stream(input);
 
-    auto r = stream.seek(-1, StreamSeek::START); // SEEK_SET negative
+    auto r = stream.seek(-1, StreamSeek::START);  // SEEK_SET negative
     EXPECT_TRUE(r.isErr());
     EXPECT_EQ(r.error(), ErrorCode::IO_ReadError);
 }
@@ -278,7 +280,7 @@ TEST(MemoryStream, SeekPastEnd) {
     std::vector<uint8_t> input = {1, 2, 3};
     MemoryStream stream(input);
 
-    auto r = stream.seek(100, StreamSeek::START); // beyond data size
+    auto r = stream.seek(100, StreamSeek::START);  // beyond data size
     EXPECT_TRUE(r.isErr());
     EXPECT_EQ(r.error(), ErrorCode::IO_ReadError);
 }
@@ -287,8 +289,8 @@ TEST(MemoryStream, SeekCurTooFarBack) {
     std::vector<uint8_t> input = {1, 2, 3};
     MemoryStream stream(input);
 
-    stream.seek(1, StreamSeek::START); // pos 1
-    auto r = stream.seek(-10, StreamSeek::CUR); // too far back
+    stream.seek(1, StreamSeek::START);  // pos 1
+    auto r = stream.seek(-10, StreamSeek::CUR);  // too far back
     EXPECT_TRUE(r.isErr());
 }
 
@@ -441,7 +443,7 @@ TEST(MemoryStream, RoundTrip_LargeData) {
     EXPECT_TRUE(wr.isOk());
     EXPECT_EQ(stream.size().value(), 65536);
 
-    stream.seek(0,StreamSeek::START);
+    stream.seek(0, StreamSeek::START);
     auto rd = stream.readAll();
     EXPECT_TRUE(rd.isOk());
     EXPECT_EQ(rd.value(), original);
@@ -455,8 +457,11 @@ std::string tmpPath(const std::string& name) {
 
 struct TmpFileGuard {
     std::string path;
-    explicit TmpFileGuard(std::string p) : path(std::move(p)) {}
-    ~TmpFileGuard() { std::remove(path.c_str()); }
+    explicit TmpFileGuard(std::string p) : path(std::move(p)) {
+    }
+    ~TmpFileGuard() {
+        std::remove(path.c_str());
+    }
 };
 
 void writeTestFile(const std::string& path, const std::string& content) {
@@ -465,7 +470,7 @@ void writeTestFile(const std::string& path, const std::string& content) {
     out.close();
 }
 
-} // anonymous namespace
+}  // anonymous namespace
 
 // ============================================================
 // FileStream — 读取
@@ -662,7 +667,7 @@ TEST(NativeFileSystem, FileSize) {
     NativeFileSystem fs;
     auto p = tmpPath("fsize.bin");
     TmpFileGuard guard(p);
-    writeTestFile(p, "1234567890"); // 10 chars
+    writeTestFile(p, "1234567890");  // 10 chars
 
     auto sz = fs.fileSize(p);
     ASSERT_TRUE(sz.isOk());
@@ -692,8 +697,7 @@ TEST(NativeFileSystem, OpenRead) {
 
     auto data = stream->readAll();
     ASSERT_TRUE(data.isOk());
-    std::string s(reinterpret_cast<const char*>(data.value().data()),
-                  data.value().size());
+    std::string s(reinterpret_cast<const char*>(data.value().data()), data.value().size());
     EXPECT_EQ(s, "native read test");
 }
 
@@ -783,4 +787,3 @@ TEST(NativeFileSystem, TempPath) {
     EXPECT_FALSE(p.empty());
     EXPECT_TRUE(fs.exists(p));
 }
-

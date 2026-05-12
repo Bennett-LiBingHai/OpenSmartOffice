@@ -2,6 +2,7 @@
 
 #include "oso/base/Result.h"
 #include "oso/io/IStream.h"
+
 #include <cstdint>
 #include <string>
 
@@ -23,7 +24,7 @@ namespace oso {
 ///   writer.writeEndDocument();
 /// @endcode
 class IOoxmlWriter {
-public:
+   public:
     virtual ~IOoxmlWriter() = default;
 
     /// 设置输出流。必须在调用任何 write* 方法之前调用。
@@ -41,9 +42,8 @@ public:
     /// @param namespaceUri 元素命名空间 URI（空字符串表示无命名空间）。
     /// @param localName    元素本地名称（不含前缀）。
     ///                     限定名（prefix:localName）由实现类根据命名空间 URI 自动查找前缀构造。
-    virtual Result<void> writeStartElement(
-        const std::string& namespaceUri,
-        const std::string& localName) = 0;
+    virtual Result<void> writeStartElement(const std::string& namespaceUri,
+                                           const std::string& localName) = 0;
 
     /// 结束最近打开的、尚未关闭的元素。
     virtual Result<void> writeEndElement() = 0;
@@ -53,10 +53,8 @@ public:
     /// @param namespaceUri 属性命名空间 URI（空字符串表示无命名空间）。
     /// @param localName    属性本地名称（不含前缀）。
     /// @param value        属性值。实现类负责执行 XML 转义。
-    virtual Result<void> writeAttribute(
-        const std::string& namespaceUri,
-        const std::string& localName,
-        const std::string& value) = 0;
+    virtual Result<void> writeAttribute(const std::string& namespaceUri,
+                                        const std::string& localName, const std::string& value) = 0;
 
     /// 在当前元素上声明一个命名空间（xmlns:prefix="nsUri"）。
     /// 若该 URI 已在祖先元素上声明，则不重复写出。
@@ -67,4 +65,4 @@ public:
     virtual Result<void> writeText(const std::string& text) = 0;
 };
 
-} // namespace oso
+}  // namespace oso

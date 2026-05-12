@@ -1,6 +1,7 @@
 #pragma once
 
 #include "oso/ooxml/write/IOoxmlWriter.h"
+
 #include <memory>
 
 namespace oso {
@@ -13,7 +14,7 @@ namespace oso {
 ///
 /// 不可拷贝，可移动。析构函数负责释放 libxml2 资源。
 class Libxml2Writer : public IOoxmlWriter {
-public:
+   public:
     Libxml2Writer();
     ~Libxml2Writer() override;
 
@@ -26,20 +27,18 @@ public:
 
     Result<void> writeStartDocument(bool standalone = true) override;
     Result<void> writeEndDocument() override;
-    Result<void> writeStartElement(
-        const std::string& namespaceUri,
-        const std::string& localName) override;
+    Result<void> writeStartElement(const std::string& namespaceUri,
+                                   const std::string& localName) override;
     Result<void> writeEndElement() override;
-    Result<void> writeAttribute(
-        const std::string& namespaceUri,
-        const std::string& localName,
-        const std::string& value) override;
+    Result<void> writeAttribute(const std::string& namespaceUri, const std::string& localName,
+                                const std::string& value) override;
     Result<void> declareNamespace(const std::string& namespaceUri) override;
     Result<void> writeText(const std::string& text) override;
 
     struct Impl;
-private:
+
+   private:
     std::unique_ptr<Impl> m_impl;
 };
 
-} // namespace oso
+}  // namespace oso

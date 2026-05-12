@@ -1,15 +1,17 @@
-#include <gtest/gtest.h>
-#include "oso/facade/DocumentFacade.h"
-#include "oso/dom/word/WordDocument.h"
+#include "oso/base/ErrorCode.h"
 #include "oso/dom/common/DomNode.h"
+#include "oso/dom/word/WordDocument.h"
+#include "oso/facade/DocumentFacade.h"
+#include "oso/ooxml/common/ContentTypeRegistry.h"
 #include "oso/ooxml/common/IZipArchive.h"
 #include "oso/ooxml/common/LibzipZipArchive.h"
-#include "oso/ooxml/common/ContentTypeRegistry.h"
 #include "oso/ooxml/common/RelationshipMap.h"
-#include "oso/base/ErrorCode.h"
+
+#include <gtest/gtest.h>
+
 #include <cstdio>
-#include <filesystem>
 #include <cstring>
+#include <filesystem>
 
 using namespace oso;
 namespace fs = std::filesystem;
@@ -19,15 +21,19 @@ namespace {
 struct TempFile {
     std::string path;
     bool isRemain;
-    explicit TempFile(std::string p, bool ir = false) : path(std::move(p)), isRemain(ir) {}
-    ~TempFile() { if (!isRemain) std::remove(path.c_str()); }
+    explicit TempFile(std::string p, bool ir = false) : path(std::move(p)), isRemain(ir) {
+    }
+    ~TempFile() {
+        if (!isRemain)
+            std::remove(path.c_str());
+    }
 };
 
 std::string tempPath(const std::string& name) {
     return (fs::temp_directory_path() / name).string();
 }
 
-} // anonymous namespace
+}  // anonymous namespace
 
 // ================================================================
 // DocumentFacade::openDocument — 错误路径
@@ -169,9 +175,12 @@ TEST(DocumentFacade, RoundTripPreservesZipStructure) {
     // 必须有这三个部件
     bool hasContentTypes = false, hasRels = false, hasDocument = false;
     for (const auto& e : list) {
-        if (e.name == "[Content_Types].xml") hasContentTypes = true;
-        if (e.name == "_rels/.rels") hasRels = true;
-        if (e.name == "word/document.xml") hasDocument = true;
+        if (e.name == "[Content_Types].xml")
+            hasContentTypes = true;
+        if (e.name == "_rels/.rels")
+            hasRels = true;
+        if (e.name == "word/document.xml")
+            hasDocument = true;
     }
 
     EXPECT_TRUE(hasContentTypes);
@@ -194,7 +203,7 @@ TEST(DocumentFacade, RoundTripPreservesZipStructure) {
     auto mimeType = ct.value().getTypeForPart("word/document.xml");
     ASSERT_TRUE(mimeType.isOk());
     EXPECT_EQ(mimeType.value(),
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml");
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml");
 }
 
 TEST(DocumentFacade, DoubleOpenDoesNotCrash) {

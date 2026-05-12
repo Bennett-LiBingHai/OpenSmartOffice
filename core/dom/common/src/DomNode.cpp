@@ -1,4 +1,5 @@
 #include "oso/dom/common/DomNode.h"
+
 #include "oso/ooxml/common/OoxmlNamespaces.h"
 #include "oso/ooxml/write/IOoxmlWriter.h"
 
@@ -92,4 +93,4 @@ void DomDocument::serialize(IOoxmlWriter& writer) const {
     writer.writeEndDocument();
 }
 
-} // namespace oso
+}  // namespace oso

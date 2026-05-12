@@ -1,8 +1,8 @@
 #pragma once
-#include <unordered_map>
 #include <string>
+#include <unordered_map>
 
-namespace oso{
+namespace oso {
 
 // ============================================================
 // PropertyBag — 属性容器（辅助类）
@@ -12,7 +12,7 @@ namespace oso{
 // 与 DomNode::m_attributes 配合使用。
 // ============================================================
 class PropertyBag {
-public:
+   public:
     void set(const std::string& key, const std::string& value) {
         m_props[key] = value;
     }
@@ -30,11 +30,13 @@ public:
         return m_props;
     }
 
-    bool empty() const { return m_props.empty(); }
+    bool empty() const {
+        return m_props.empty();
+    }
 
-private:
+   private:
     std::unordered_map<std::string, std::string> m_props;
     static const std::string kEmpty;
 };
 
-}//namespace oso
+}  // namespace oso

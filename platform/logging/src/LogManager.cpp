@@ -1,10 +1,10 @@
 #include "oso/logging/LogManager.h"
 
-#include <spdlog/spdlog.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/sinks/basic_file_sink.h>
-#include <spdlog/sinks/syslog_sink.h>
 #include <spdlog/pattern_formatter.h>
+#include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/sinks/syslog_sink.h>
+#include <spdlog/spdlog.h>
 
 #include <array>
 #include <cstdio>
@@ -17,17 +17,20 @@ namespace {
 
 constexpr const char* kLoggerName = "oso";
 
-constexpr std::array<const char*, 5> kLevelNames = {
-    "debug", "info", "warn", "error", "fatal"
-};
+constexpr std::array<const char*, 5> kLevelNames = {"debug", "info", "warn", "error", "fatal"};
 
 spdlog::level::level_enum toSpdlog(LogLevel lv) {
     switch (lv) {
-        case LogLevel::Debug: return spdlog::level::debug;
-        case LogLevel::Info:  return spdlog::level::info;
-        case LogLevel::Warn:  return spdlog::level::warn;
-        case LogLevel::Error: return spdlog::level::err;
-        case LogLevel::Fatal: return spdlog::level::critical;
+        case LogLevel::Debug:
+            return spdlog::level::debug;
+        case LogLevel::Info:
+            return spdlog::level::info;
+        case LogLevel::Warn:
+            return spdlog::level::warn;
+        case LogLevel::Error:
+            return spdlog::level::err;
+        case LogLevel::Fatal:
+            return spdlog::level::critical;
     }
     return spdlog::level::info;
 }
@@ -35,17 +38,19 @@ spdlog::level::level_enum toSpdlog(LogLevel lv) {
 // 将 file 路径截短为仅保留文件名（避免编译路径泄露）
 const char* shortFile(const char* file) {
     const char* p = file;
-    while (*p) ++p;
-    while (p > file && *(p - 1) != '/' && *(p - 1) != '\\') --p;
+    while (*p)
+        ++p;
+    while (p > file && *(p - 1) != '/' && *(p - 1) != '\\')
+        --p;
     return p;
 }
 
-} // anonymous namespace
+}  // anonymous namespace
 
 // ---- LogManager::Impl ----
 
 class LogManager::Impl {
-public:
+   public:
     void init(const Config& cfg) {
         if (m_logger) {
             spdlog::drop(kLoggerName);
@@ -62,8 +67,8 @@ public:
         // 文件输出
         if (!cfg.logFile.empty()) {
             try {
-                auto sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
-                    cfg.logFile, /*truncate=*/false);
+                auto sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(cfg.logFile,
+                                                                                /*truncate=*/false);
                 sinks.push_back(std::move(sink));
             } catch (const spdlog::spdlog_ex& e) {
                 std::fprintf(stderr, "[oso] failed to open log file '%s': %s\n",
@@ -89,8 +94,7 @@ public:
             return;
         }
 
-        m_logger = std::make_shared<spdlog::logger>(kLoggerName,
-                                                     sinks.begin(), sinks.end());
+        m_logger = std::make_shared<spdlog::logger>(kLoggerName, sinks.begin(), sinks.end());
         m_logger->set_level(toSpdlog(cfg.minLevel));
         m_logger->flush_on(spdlog::level::err);
 
@@ -103,7 +107,8 @@ public:
     }
 
     void log(LogLevel level, const char* file, int line, const std::string& msg) {
-        if (!m_logger) return;
+        if (!m_logger)
+            return;
 
         spdlog::source_loc loc{file, line, nullptr};
         auto lv = toSpdlog(level);
@@ -113,28 +118,41 @@ public:
             escaped.reserve(msg.size() + 2);
             for (char c : msg) {
                 switch (c) {
-                    case '"':  escaped += R"(\")"; break;
-                    case '\\': escaped += R"(\\)"; break;
-                    case '\n': escaped += R"(\n)";  break;
-                    case '\r': escaped += R"(\r)";  break;
-                    case '\t': escaped += R"(\t)";  break;
-                    default:   escaped += c;      break;
+                    case '"':
+                        escaped += R"(\")";
+                        break;
+                    case '\\':
+                        escaped += R"(\\)";
+                        break;
+                    case '\n':
+                        escaped += R"(\n)";
+                        break;
+                    case '\r':
+                        escaped += R"(\r)";
+                        break;
+                    case '\t':
+                        escaped += R"(\t)";
+                        break;
+                    default:
+                        escaped += c;
+                        break;
                 }
             }
-            m_logger->log(loc, lv,
-                          R"({{"level":"{}","file":"{}","line":{},"msg":"{}"}})",
-                          kLevelNames[static_cast<int>(level)],
-                          shortFile(file), line, escaped);
+            m_logger->log(loc, lv, R"({{"level":"{}","file":"{}","line":{},"msg":"{}"}})",
+                          kLevelNames[static_cast<int>(level)], shortFile(file), line, escaped);
         } else {
             m_logger->log(loc, lv, "{}", msg);
         }
     }
 
     void flush() {
-        if (m_logger) m_logger->flush();
+        if (m_logger)
+            m_logger->flush();
     }
 
-    bool isInitialized() const { return m_initialized; }
+    bool isInitialized() const {
+        return m_initialized;
+    }
 
     ~Impl() {
         if (m_logger) {
@@ -143,7 +161,7 @@ public:
         }
     }
 
-private:
+   private:
     std::shared_ptr<spdlog::logger> m_logger;
     bool m_jsonFormat = false;
     bool m_initialized = false;
@@ -169,15 +187,15 @@ bool LogManager::isInitialized() const {
     return m_impl && m_impl->isInitialized();
 }
 
-void LogManager::log(LogLevel level, const char* file, int line,
-                     const std::string& msg) {
+void LogManager::log(LogLevel level, const char* file, int line, const std::string& msg) {
     if (m_impl) {
         m_impl->log(level, file, line, msg);
     }
 }
 
 void LogManager::flush() {
-    if (m_impl) m_impl->flush();
+    if (m_impl)
+        m_impl->flush();
 }
 
-} // namespace oso
+}  // namespace oso

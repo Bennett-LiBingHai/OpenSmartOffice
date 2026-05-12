@@ -1,21 +1,22 @@
 #pragma once
 
 #include "oso/base/Result.h"
+
 #include <cstdint>
 #include <vector>
 
 namespace oso {
 
-//指针在流中的位置
-enum class StreamSeek:uint8_t{
-    START=0,//第一个字符位置
-    CUR,//指针当前位置
-    END //最后一个字符之后
+// 指针在流中的位置
+enum class StreamSeek : uint8_t {
+    START = 0,  // 第一个字符位置
+    CUR,  // 指针当前位置
+    END  // 最后一个字符之后
 };
 
 /// 字节流抽象接口，支持读写和定位操作
 class IStream {
-public:
+   public:
     virtual ~IStream() = default;
 
     /// 读取最多 maxLen 字节到 buffer，返回实际读取的字节数
@@ -39,31 +40,40 @@ public:
     /// 获取当前读写位置
     virtual Result<uint64_t> tell() const = 0;
 
-    virtual bool isOpen() const = 0;        ///< 流是否已打开
-    virtual Result<void> flush() = 0;       ///< 刷新缓冲区
-    virtual Result<void> close() = 0;       ///< 关闭流
+    virtual bool isOpen() const = 0;  ///< 流是否已打开
+    virtual Result<void> flush() = 0;  ///< 刷新缓冲区
+    virtual Result<void> close() = 0;  ///< 关闭流
     virtual Result<uint64_t> size() const = 0;  ///< 获取流的总大小
 };
 
 // 内存字节流，用于测试和小型缓冲区
 class MemoryStream : public IStream {
-public:
+   public:
     explicit MemoryStream(std::vector<uint8_t> data = {})
-        : m_data(std::move(data)), m_pos(0), m_open(true) {}
+        : m_data(std::move(data)), m_pos(0), m_open(true) {
+    }
 
     Result<size_t> read(uint8_t* buffer, size_t maxLen) override;
     Result<std::vector<uint8_t>> readAll() override;
     Result<void> write(const uint8_t* data, size_t len) override;
     Result<uint64_t> seek(int64_t offset, StreamSeek whence) override;
     Result<uint64_t> tell() const override;
-    bool isOpen() const override { return m_open; }
-    Result<void> flush() override { return Result<void>::ok(); }
+    bool isOpen() const override {
+        return m_open;
+    }
+    Result<void> flush() override {
+        return Result<void>::ok();
+    }
     Result<void> close() override;
-    Result<uint64_t> size() const override { return Result<uint64_t>::ok(m_data.size()); }
+    Result<uint64_t> size() const override {
+        return Result<uint64_t>::ok(m_data.size());
+    }
 
-    const std::vector<uint8_t>& data() const { return m_data; }
+    const std::vector<uint8_t>& data() const {
+        return m_data;
+    }
 
-private:
+   private:
     std::vector<uint8_t> m_data;
     size_t m_pos;
     bool m_open;
@@ -73,7 +83,7 @@ private:
 ///
 /// 不可拷贝，析构时自动关闭文件。
 class FileStream : public IStream {
-public:
+   public:
     /// 以指定模式打开文件。
     /// @param path      文件路径
     /// @param mode      打开模式（"rb" / "wb" / "ab" 等，遵循 fopen 约定）
@@ -95,8 +105,8 @@ public:
     Result<void> close() override;
     Result<uint64_t> size() const override;
 
-private:
+   private:
     FILE* m_file;
 };
 
-} // namespace oso
+}  // namespace oso

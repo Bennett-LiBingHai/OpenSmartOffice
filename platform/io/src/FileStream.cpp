@@ -1,14 +1,17 @@
-#include "oso/io/IStream.h"
 #include "oso/base/ErrorCode.h"
+#include "oso/io/IStream.h"
+
 #include <algorithm>
 
 namespace oso {
 
 FileStream::FileStream(const std::string& path, const char* mode)
-    : m_file(std::fopen(path.c_str(), mode)) {}
+    : m_file(std::fopen(path.c_str(), mode)) {
+}
 
 FileStream::~FileStream() {
-    if (m_file) std::fclose(m_file);
+    if (m_file)
+        std::fclose(m_file);
 }
 
 FileStream::FileStream(FileStream&& other) noexcept : m_file(other.m_file) {
@@ -17,7 +20,8 @@ FileStream::FileStream(FileStream&& other) noexcept : m_file(other.m_file) {
 
 FileStream& FileStream::operator=(FileStream&& other) noexcept {
     if (this != &other) {
-        if (m_file) std::fclose(m_file);
+        if (m_file)
+            std::fclose(m_file);
         m_file = other.m_file;
         other.m_file = nullptr;
     }
@@ -25,7 +29,8 @@ FileStream& FileStream::operator=(FileStream&& other) noexcept {
 }
 
 Result<size_t> FileStream::read(uint8_t* buffer, size_t maxLen) {
-    if (!m_file) return Result<size_t>::err(ErrorCode::IO_ReadError, "File not open");
+    if (!m_file)
+        return Result<size_t>::err(ErrorCode::IO_ReadError, "File not open");
     size_t n = std::fread(buffer, 1, maxLen, m_file);
     if (std::ferror(m_file))
         return Result<size_t>::err(ErrorCode::IO_ReadError, "fread failed");
@@ -33,7 +38,8 @@ Result<size_t> FileStream::read(uint8_t* buffer, size_t maxLen) {
 }
 
 Result<std::vector<uint8_t>> FileStream::readAll() {
-    if (!m_file) return Result<std::vector<uint8_t>>::err(ErrorCode::IO_ReadError, "File not open");
+    if (!m_file)
+        return Result<std::vector<uint8_t>>::err(ErrorCode::IO_ReadError, "File not open");
     auto cur = std::ftell(m_file);
     std::fseek(m_file, 0, SEEK_END);
     auto end = std::ftell(m_file);
@@ -48,7 +54,8 @@ Result<std::vector<uint8_t>> FileStream::readAll() {
 }
 
 Result<void> FileStream::write(const uint8_t* data, size_t len) {
-    if (!m_file) return Result<void>::err(ErrorCode::IO_WriteError, "File not open");
+    if (!m_file)
+        return Result<void>::err(ErrorCode::IO_WriteError, "File not open");
     size_t written = std::fwrite(data, 1, len, m_file);
     if (written != len)
         return Result<void>::err(ErrorCode::IO_WriteError, "fwrite failed");
@@ -56,14 +63,16 @@ Result<void> FileStream::write(const uint8_t* data, size_t len) {
 }
 
 Result<uint64_t> FileStream::seek(int64_t offset, StreamSeek whence) {
-    if (!m_file) return Result<uint64_t>::err(ErrorCode::IO_ReadError, "File not open");
+    if (!m_file)
+        return Result<uint64_t>::err(ErrorCode::IO_ReadError, "File not open");
     if (std::fseek(m_file, offset, static_cast<int>(whence)) != 0)
         return Result<uint64_t>::err(ErrorCode::IO_ReadError, "fseek failed");
     return Result<uint64_t>::ok(static_cast<uint64_t>(std::ftell(m_file)));
 }
 
 Result<uint64_t> FileStream::tell() const {
-    if (!m_file) return Result<uint64_t>::err(ErrorCode::IO_ReadError, "File not open");
+    if (!m_file)
+        return Result<uint64_t>::err(ErrorCode::IO_ReadError, "File not open");
     return Result<uint64_t>::ok(static_cast<uint64_t>(std::ftell(m_file)));
 }
 
@@ -72,13 +81,15 @@ bool FileStream::isOpen() const {
 }
 
 Result<void> FileStream::flush() {
-    if (!m_file) return Result<void>::err(ErrorCode::IO_WriteError, "File not open");
+    if (!m_file)
+        return Result<void>::err(ErrorCode::IO_WriteError, "File not open");
     std::fflush(m_file);
     return Result<void>::ok();
 }
 
 Result<void> FileStream::close() {
-    if (!m_file) return Result<void>::err(ErrorCode::IO_WriteError, "File not open");
+    if (!m_file)
+        return Result<void>::err(ErrorCode::IO_WriteError, "File not open");
     if (std::fclose(m_file) != 0)
         return Result<void>::err(ErrorCode::IO_WriteError, "fclose failed");
     m_file = nullptr;
@@ -86,12 +97,13 @@ Result<void> FileStream::close() {
 }
 
 Result<uint64_t> FileStream::size() const {
-    if (!m_file) return Result<uint64_t>::err(ErrorCode::IO_ReadError, "File not open");
+    if (!m_file)
+        return Result<uint64_t>::err(ErrorCode::IO_ReadError, "File not open");
     auto cur = std::ftell(m_file);
     std::fseek(m_file, 0, SEEK_END);
     auto end = std::ftell(m_file);
-    std::fseek(m_file, cur, SEEK_SET); // restore position
+    std::fseek(m_file, cur, SEEK_SET);  // restore position
     return Result<uint64_t>::ok(static_cast<uint64_t>(end));
 }
 
-} // namespace oso
+}  // namespace oso

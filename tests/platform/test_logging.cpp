@@ -1,9 +1,10 @@
-#include <gtest/gtest.h>
 #include "oso/logging/LogManager.h"
 
+#include <gtest/gtest.h>
+
+#include <filesystem>
 #include <fstream>
 #include <string>
-#include <filesystem>
 
 namespace fs = std::filesystem;
 
@@ -17,10 +18,11 @@ constexpr const char* TEST_LOG_FILE = "/tmp/oso_test_log.txt";
 // ============================================================
 
 class LogTestHelper {
-public:
+   public:
     static bool fileContains(const std::string& filename, const std::string& substr) {
         std::ifstream ifs(filename);
-        if (!ifs.is_open()) return false;
+        if (!ifs.is_open())
+            return false;
         std::string content((std::istreambuf_iterator<char>(ifs)),
                             std::istreambuf_iterator<char>());
         return content.find(substr) != std::string::npos;
@@ -38,7 +40,7 @@ public:
 
 TEST(LogManager, NotInitializedByDefault) {
     // 确保 LogManager 未初始化
-    LogManager::instance().flush(); // 清理可能的状态
+    LogManager::instance().flush();  // 清理可能的状态
     EXPECT_FALSE(LogManager::instance().isInitialized());
 }
 
@@ -243,11 +245,13 @@ TEST(LogManager, JsonFormatEscapesSpecialChars) {
     cfg.jsonFormat = true;
 
     LogManager::instance().init(cfg);
-    LogManager::instance().log(LogLevel::Info, __FILE__, __LINE__, "msg with \"quotes\" and \\backslash");
+    LogManager::instance().log(LogLevel::Info, __FILE__, __LINE__,
+                               "msg with \"quotes\" and \\backslash");
     LogManager::instance().flush();
 
     // 文件应该包含转义后的内容
-    EXPECT_TRUE(LogTestHelper::fileContains(TEST_LOG_FILE, R"(msg with \"quotes\" and \\backslash)"));
+    EXPECT_TRUE(
+        LogTestHelper::fileContains(TEST_LOG_FILE, R"(msg with \"quotes\" and \\backslash)"));
 
     LogTestHelper::removeTestFile();
 }
@@ -411,8 +415,8 @@ TEST(LogStream, StreamAllLevels) {
     LogManager::instance().init(cfg);
 
     LOG(Debug) << "debug stream";
-    LOG(Info)  << "info stream";
-    LOG(Warn)  << "warn stream";
+    LOG(Info) << "info stream";
+    LOG(Warn) << "warn stream";
     LOG(Error) << "error stream";
     LOG(Fatal) << "fatal stream";
 
@@ -482,8 +486,8 @@ TEST(LogManager, InitWithEmptyConfig) {
 
 TEST(LogLevel, EnumValues) {
     EXPECT_EQ(static_cast<int>(LogLevel::Debug), 0);
-    EXPECT_EQ(static_cast<int>(LogLevel::Info),  1);
-    EXPECT_EQ(static_cast<int>(LogLevel::Warn),  2);
+    EXPECT_EQ(static_cast<int>(LogLevel::Info), 1);
+    EXPECT_EQ(static_cast<int>(LogLevel::Warn), 2);
     EXPECT_EQ(static_cast<int>(LogLevel::Error), 3);
     EXPECT_EQ(static_cast<int>(LogLevel::Fatal), 4);
 }

@@ -2,6 +2,7 @@
 
 #include "oso/base/Result.h"
 #include "oso/io/IStream.h"
+
 #include <cstdint>
 #include <functional>
 #include <string>
@@ -11,10 +12,10 @@ namespace oso {
 
 /// XML 元素的单个属性，包含命名空间、本地名、前缀和值。
 struct XmlAttribute {
-    std::string namespaceUri; ///< 属性命名空间 URI（可能为空）。
-    std::string localName;    ///< 属性的本地名称（不含前缀）。
-    std::string prefix;       ///< 属性前缀（可能为空）。
-    std::string value;        ///< 属性值。
+    std::string namespaceUri;  ///< 属性命名空间 URI（可能为空）。
+    std::string localName;  ///< 属性的本地名称（不含前缀）。
+    std::string prefix;  ///< 属性前缀（可能为空）。
+    std::string value;  ///< 属性值。
 };
 
 /// OOXML 读取器的抽象接口。
@@ -23,7 +24,7 @@ struct XmlAttribute {
 /// 数据解析为一系列事件：开始元素、结束元素和文本内容。
 /// 调用者在调用 parse() 或 parseStream() 时注册回调函数。
 class IOoxmlReader {
-public:
+   public:
     virtual ~IOoxmlReader() = default;
 
     /// 开始元素回调签名。
@@ -31,20 +32,16 @@ public:
     /// @param localName    不包含前缀的元素本地名称。
     /// @param qName        限定名称（prefix:localName，或无前缀时仅 localName）。
     /// @param attributes   该元素上的属性列表。
-    using StartElementFn = std::function<void(
-        const std::string& namespaceUri,
-        const std::string& localName,
-        const std::string& qName,
-        const std::vector<XmlAttribute>& attributes)>;
+    using StartElementFn =
+        std::function<void(const std::string& namespaceUri, const std::string& localName,
+                           const std::string& qName, const std::vector<XmlAttribute>& attributes)>;
 
     /// 结束元素回调签名。
     /// @param namespaceUri 元素命名空间 URI（无命名空间时为空字符串）。
     /// @param localName    不包含前缀的元素本地名称。
     /// @param qName        限定名称。
     using EndElementFn = std::function<void(
-        const std::string& namespaceUri,
-        const std::string& localName,
-        const std::string& qName)>;
+        const std::string& namespaceUri, const std::string& localName, const std::string& qName)>;
 
     /// 文本内容回调签名。
     /// @param text 元素的文本内容。SAX 解析器可能分多次调用此回调来传递同一元素的文本片段。
@@ -60,11 +57,8 @@ public:
     /// @param onEnd   结束元素时调用的回调。
     /// @param onText  文本内容时调用的回调。
     /// @return 解析成功时返回 ok，否则返回错误。
-    virtual Result<void> parse(
-        const std::vector<uint8_t>& xmlData,
-        StartElementFn onStart,
-        EndElementFn onEnd,
-        CharactersFn onText) = 0;
+    virtual Result<void> parse(const std::vector<uint8_t>& xmlData, StartElementFn onStart,
+                               EndElementFn onEnd, CharactersFn onText) = 0;
 
     /// 从输入流中以流式方式解析 XML。
     ///
@@ -75,11 +69,8 @@ public:
     /// @param onEnd   结束元素时调用的回调。
     /// @param onText  文本内容时调用的回调。
     /// @return 解析成功时返回 ok，否则返回错误。
-    virtual Result<void> parseStream(
-        IStream& stream,
-        StartElementFn onStart,
-        EndElementFn onEnd,
-        CharactersFn onText) = 0;
+    virtual Result<void> parseStream(IStream& stream, StartElementFn onStart, EndElementFn onEnd,
+                                     CharactersFn onText) = 0;
 };
 
-} // namespace oso
+}  // namespace oso

@@ -1,16 +1,16 @@
 #pragma once
 
-#include <cstdint>
 #include <cmath>
+#include <cstdint>
 #include <string>
 
 namespace oso {
 
 /// RGBA 颜色值，每通道 8 位，作为 OOXML 文档颜色的通用表示
 struct Color {
-    uint8_t r = 0;    ///< 红色通道
-    uint8_t g = 0;    ///< 绿色通道
-    uint8_t b = 0;    ///< 蓝色通道
+    uint8_t r = 0;  ///< 红色通道
+    uint8_t g = 0;  ///< 绿色通道
+    uint8_t b = 0;  ///< 蓝色通道
     uint8_t a = 255;  ///< Alpha 通道，255 为完全不透明
 
     // ---- 工厂方法 ----
@@ -24,46 +24,54 @@ struct Color {
     }
 
     static Color fromHex(uint32_t hex) {
-        return {
-            static_cast<uint8_t>((hex >> 16) & 0xFF),
-            static_cast<uint8_t>((hex >> 8) & 0xFF),
-            static_cast<uint8_t>(hex & 0xFF),
-            static_cast<uint8_t>((hex >> 24) & 0xFF)
-        };
+        return {static_cast<uint8_t>((hex >> 16) & 0xFF), static_cast<uint8_t>((hex >> 8) & 0xFF),
+                static_cast<uint8_t>(hex & 0xFF), static_cast<uint8_t>((hex >> 24) & 0xFF)};
     }
 
     // ---- 主题颜色 ----
     // ISO/IEC 29500-1:2016 §20.1.10.27 ST_SchemeColorVal
     enum class ThemeColor {
-        Dark1,       // 深色 1（通常黑色）
-        Light1,      // 浅色 1（通常白色）
-        Dark2,       // 深色 2（通常深灰/蓝灰）
-        Light2,      // 浅色 2（通常浅灰）
-        Accent1,     // 强调色 1
-        Accent2,     // 强调色 2
-        Accent3,     // 强调色 3
-        Accent4,     // 强调色 4
-        Accent5,     // 强调色 5
-        Accent6,     // 强调色 6
-        Hyperlink,   // 超链接色
+        Dark1,  // 深色 1（通常黑色）
+        Light1,  // 浅色 1（通常白色）
+        Dark2,  // 深色 2（通常深灰/蓝灰）
+        Light2,  // 浅色 2（通常浅灰）
+        Accent1,  // 强调色 1
+        Accent2,  // 强调色 2
+        Accent3,  // 强调色 3
+        Accent4,  // 强调色 4
+        Accent5,  // 强调色 5
+        Accent6,  // 强调色 6
+        Hyperlink,  // 超链接色
         FollowedHyperlink,  // 已访问超链接色
     };
 
     // 使用默认 Office 主题颜色值构建
     static Color fromTheme(ThemeColor tc) {
         switch (tc) {
-            case ThemeColor::Dark1:       return {0, 0, 0, 255};
-            case ThemeColor::Light1:      return {255, 255, 255, 255};
-            case ThemeColor::Dark2:       return {68, 84, 106, 255};
-            case ThemeColor::Light2:      return {242, 242, 242, 255};
-            case ThemeColor::Accent1:     return {68, 114, 196, 255};
-            case ThemeColor::Accent2:     return {237, 125, 49, 255};
-            case ThemeColor::Accent3:     return {165, 165, 165, 255};
-            case ThemeColor::Accent4:     return {255, 192, 0, 255};
-            case ThemeColor::Accent5:     return {112, 173, 71, 255};
-            case ThemeColor::Accent6:     return {91, 155, 213, 255};
-            case ThemeColor::Hyperlink:   return {5, 99, 193, 255};
-            case ThemeColor::FollowedHyperlink: return {149, 79, 114, 255};
+            case ThemeColor::Dark1:
+                return {0, 0, 0, 255};
+            case ThemeColor::Light1:
+                return {255, 255, 255, 255};
+            case ThemeColor::Dark2:
+                return {68, 84, 106, 255};
+            case ThemeColor::Light2:
+                return {242, 242, 242, 255};
+            case ThemeColor::Accent1:
+                return {68, 114, 196, 255};
+            case ThemeColor::Accent2:
+                return {237, 125, 49, 255};
+            case ThemeColor::Accent3:
+                return {165, 165, 165, 255};
+            case ThemeColor::Accent4:
+                return {255, 192, 0, 255};
+            case ThemeColor::Accent5:
+                return {112, 173, 71, 255};
+            case ThemeColor::Accent6:
+                return {91, 155, 213, 255};
+            case ThemeColor::Hyperlink:
+                return {5, 99, 193, 255};
+            case ThemeColor::FollowedHyperlink:
+                return {149, 79, 114, 255};
         }
         return {0, 0, 0, 255};
     }
@@ -94,22 +102,22 @@ struct Color {
     static Color fromIndexed(uint8_t index) {
         // 系统颜色 (0-7)
         static constexpr Color kIndexed[65] = {
-            /* 0  */ {0, 0, 0, 255},       // Black
-            /* 1  */ {255, 255, 255, 255}, // White
-            /* 2  */ {255, 0, 0, 255},     // Red
-            /* 3  */ {0, 255, 0, 255},     // Green
-            /* 4  */ {0, 0, 255, 255},     // Blue
-            /* 5  */ {255, 255, 0, 255},   // Yellow
-            /* 6  */ {255, 0, 255, 255},   // Magenta
-            /* 7  */ {0, 255, 255, 255},   // Cyan
-            /* 8  */ {128, 0, 0, 255},     // Maroon
-            /* 9  */ {0, 128, 0, 255},     // DarkGreen
-            /* 10 */ {0, 0, 128, 255},     // Navy
-            /* 11 */ {128, 128, 0, 255},   // Olive
-            /* 12 */ {128, 0, 128, 255},   // Purple
-            /* 13 */ {0, 128, 128, 255},   // Teal
-            /* 14 */ {192, 192, 192, 255}, // Silver
-            /* 15 */ {128, 128, 128, 255}, // Gray
+            /* 0  */ {0, 0, 0, 255},  // Black
+            /* 1  */ {255, 255, 255, 255},  // White
+            /* 2  */ {255, 0, 0, 255},  // Red
+            /* 3  */ {0, 255, 0, 255},  // Green
+            /* 4  */ {0, 0, 255, 255},  // Blue
+            /* 5  */ {255, 255, 0, 255},  // Yellow
+            /* 6  */ {255, 0, 255, 255},  // Magenta
+            /* 7  */ {0, 255, 255, 255},  // Cyan
+            /* 8  */ {128, 0, 0, 255},  // Maroon
+            /* 9  */ {0, 128, 0, 255},  // DarkGreen
+            /* 10 */ {0, 0, 128, 255},  // Navy
+            /* 11 */ {128, 128, 0, 255},  // Olive
+            /* 12 */ {128, 0, 128, 255},  // Purple
+            /* 13 */ {0, 128, 128, 255},  // Teal
+            /* 14 */ {192, 192, 192, 255},  // Silver
+            /* 15 */ {128, 128, 128, 255},  // Gray
             /* 16 */ {153, 153, 255, 255},
             /* 17 */ {153, 51, 102, 255},
             /* 18 */ {255, 255, 204, 255},
@@ -158,25 +166,23 @@ struct Color {
             /* 61 */ {0, 0, 153, 255},
             /* 62 */ {153, 51, 51, 255},
             /* 63 */ {51, 0, 0, 255},
-            /* 64 */ {0, 0, 0, 255},       // Automatic (system foreground)
+            /* 64 */ {0, 0, 0, 255},  // Automatic (system foreground)
         };
-        if (index <= 64) return kIndexed[index];
+        if (index <= 64)
+            return kIndexed[index];
         return {0, 0, 0, 255};
     }
 
     // ---- 转换 ----
 
     uint32_t toArgb() const {
-        return (static_cast<uint32_t>(a) << 24)
-             | (static_cast<uint32_t>(r) << 16)
-             | (static_cast<uint32_t>(g) << 8)
-             | static_cast<uint32_t>(b);
+        return (static_cast<uint32_t>(a) << 24) | (static_cast<uint32_t>(r) << 16) |
+               (static_cast<uint32_t>(g) << 8) | static_cast<uint32_t>(b);
     }
 
     uint32_t toRgb() const {
-        return (static_cast<uint32_t>(r) << 16)
-             | (static_cast<uint32_t>(g) << 8)
-             | static_cast<uint32_t>(b);
+        return (static_cast<uint32_t>(r) << 16) | (static_cast<uint32_t>(g) << 8) |
+               static_cast<uint32_t>(b);
     }
 
     // HTML 样式 "#RRGGBB" 或 "#AARRGGBB"（包含 alpha）
@@ -195,9 +201,11 @@ struct Color {
     bool operator==(const Color& o) const {
         return r == o.r && g == o.g && b == o.b && a == o.a;
     }
-    bool operator!=(const Color& o) const { return !(*this == o); }
+    bool operator!=(const Color& o) const {
+        return !(*this == o);
+    }
 
-private:
+   private:
     // tint: 将颜色向白色方向变换
     static Color tintColor(const Color& c, double tint) {
         auto t = [tint](uint8_t v) -> uint8_t {
@@ -221,21 +229,21 @@ private:
 
 /// 常用预定义颜色常量
 namespace Colors {
-    inline constexpr Color Black       = {0, 0, 0, 255};
-    inline constexpr Color White       = {255, 255, 255, 255};
-    inline constexpr Color Red         = {255, 0, 0, 255};
-    inline constexpr Color Green       = {0, 255, 0, 255};
-    inline constexpr Color Blue        = {0, 0, 255, 255};
-    inline constexpr Color Yellow      = {255, 255, 0, 255};
-    inline constexpr Color Cyan        = {0, 255, 255, 255};
-    inline constexpr Color Magenta     = {255, 0, 255, 255};
-    inline constexpr Color Transparent = {0, 0, 0, 0};
-    inline constexpr Color Gray        = {128, 128, 128, 255};
-    inline constexpr Color DarkGray    = {64, 64, 64, 255};
-    inline constexpr Color LightGray   = {192, 192, 192, 255};
-    inline constexpr Color Orange      = {255, 165, 0, 255};
-    inline constexpr Color Pink        = {255, 192, 203, 255};
-    inline constexpr Color Brown       = {165, 42, 42, 255};
-}
+inline constexpr Color Black = {0, 0, 0, 255};
+inline constexpr Color White = {255, 255, 255, 255};
+inline constexpr Color Red = {255, 0, 0, 255};
+inline constexpr Color Green = {0, 255, 0, 255};
+inline constexpr Color Blue = {0, 0, 255, 255};
+inline constexpr Color Yellow = {255, 255, 0, 255};
+inline constexpr Color Cyan = {0, 255, 255, 255};
+inline constexpr Color Magenta = {255, 0, 255, 255};
+inline constexpr Color Transparent = {0, 0, 0, 0};
+inline constexpr Color Gray = {128, 128, 128, 255};
+inline constexpr Color DarkGray = {64, 64, 64, 255};
+inline constexpr Color LightGray = {192, 192, 192, 255};
+inline constexpr Color Orange = {255, 165, 0, 255};
+inline constexpr Color Pink = {255, 192, 203, 255};
+inline constexpr Color Brown = {165, 42, 42, 255};
+}  // namespace Colors
 
-} // namespace oso
+}  // namespace oso

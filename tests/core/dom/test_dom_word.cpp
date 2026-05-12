@@ -1,9 +1,10 @@
-#include <gtest/gtest.h>
-#include "oso/dom/word/WordDocument.h"
 #include "oso/dom/common/DomNode.h"
-#include "oso/ooxml/write/Libxml2Writer.h"
-#include "oso/ooxml/read/Libxml2Reader.h"
+#include "oso/dom/word/WordDocument.h"
 #include "oso/io/IStream.h"
+#include "oso/ooxml/read/Libxml2Reader.h"
+#include "oso/ooxml/write/Libxml2Writer.h"
+
+#include <gtest/gtest.h>
 
 using namespace oso;
 
@@ -348,9 +349,10 @@ TEST(DomWordIntegration, SerializeRoundTripWordDocument) {
     std::vector<std::string> elementNames;
     std::string paraAttrs;
 
-    reader.parse(stream.data(),
-        [&](const std::string&, const std::string& localName,
-            const std::string&, const std::vector<XmlAttribute>& attrs) {
+    reader.parse(
+        stream.data(),
+        [&](const std::string&, const std::string& localName, const std::string&,
+            const std::vector<XmlAttribute>& attrs) {
             elementNames.push_back(localName);
             if (localName == "p") {
                 for (const auto& a : attrs) {
@@ -360,16 +362,18 @@ TEST(DomWordIntegration, SerializeRoundTripWordDocument) {
         },
         nullptr,
         [&](const std::string& text) {
-            bool isSpace=true;
-            for(const auto& c:text){
-                if(!isspace(c))isSpace=false;
+            bool isSpace = true;
+            for (const auto& c : text) {
+                if (!isspace(c))
+                    isSpace = false;
             }
-            if(isSpace)return;
+            if (isSpace)
+                return;
             capturedText += text;
         });
 
     // 4. 验证
-    ASSERT_GE(elementNames.size(), 5u); // document, body, p, r, t
+    ASSERT_GE(elementNames.size(), 5u);  // document, body, p, r, t
     EXPECT_EQ(capturedText, "Round-trip content");
 }
 

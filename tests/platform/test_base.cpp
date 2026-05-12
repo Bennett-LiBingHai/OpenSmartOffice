@@ -1,10 +1,11 @@
-#include <gtest/gtest.h>
-#include "oso/base/ErrorCode.h"
-#include "oso/base/Result.h"
 #include "oso/base/Color.h"
+#include "oso/base/DocPath.h"
+#include "oso/base/ErrorCode.h"
 #include "oso/base/Geometry.h"
 #include "oso/base/Length.h"
-#include "oso/base/DocPath.h"
+#include "oso/base/Result.h"
+
+#include <gtest/gtest.h>
 
 using namespace oso;
 
@@ -32,11 +33,11 @@ TEST(ErrorCode, SubModuleEncoding) {
     // Sub-module occupies 4 bits within the upper 16 bits, at [19:16]
     uint32_t raw = ErrorCode(ErrorCode::OOXML_XmlParseError).raw();
     uint32_t subModule = (raw >> 16) & 0xF;
-    EXPECT_EQ(subModule, 0x1); // OOXML = 0x1 within Infra
+    EXPECT_EQ(subModule, 0x1);  // OOXML = 0x1 within Infra
 
     raw = ErrorCode(ErrorCode::Formula_SyntaxError).raw();
     subModule = (raw >> 16) & 0xF;
-    EXPECT_EQ(subModule, 0x2); // Formula = 0x2 within Infra
+    EXPECT_EQ(subModule, 0x2);  // Formula = 0x2 within Infra
 }
 
 TEST(ErrorCode, ToString) {
@@ -93,7 +94,8 @@ TEST(Result, VoidErr) {
 }
 
 static Result<int> divide(int a, int b) {
-    if (b == 0) return Result<int>::err(ErrorCode::DOM_InvalidOperation, "div by zero");
+    if (b == 0)
+        return Result<int>::err(ErrorCode::DOM_InvalidOperation, "div by zero");
     return Result<int>::ok(a / b);
 }
 
@@ -117,7 +119,7 @@ TEST(OSOTry, PassesOk) {
     };
     auto r = fn(2);
     EXPECT_TRUE(r.isOk());
-    EXPECT_EQ(r.value(), 10); // 10/2*2
+    EXPECT_EQ(r.value(), 10);  // 10/2*2
 }
 
 TEST(OSOTryAssign, AssignsValue) {
@@ -128,7 +130,7 @@ TEST(OSOTryAssign, AssignsValue) {
     };
     auto r = fn(4);
     EXPECT_TRUE(r.isOk());
-    EXPECT_EQ(r.value(), 6); // 20/4 + 1
+    EXPECT_EQ(r.value(), 6);  // 20/4 + 1
 }
 
 // ============================================================
@@ -183,7 +185,7 @@ TEST(Color, ToHexStringWithAlpha) {
 TEST(Color, PredefinedColors) {
     EXPECT_EQ(Colors::Black, Color::fromRgb(0, 0, 0));
     EXPECT_EQ(Colors::White, Color::fromRgb(255, 255, 255));
-    EXPECT_EQ(Colors::Red,   Color::fromRgb(255, 0, 0));
+    EXPECT_EQ(Colors::Red, Color::fromRgb(255, 0, 0));
     EXPECT_EQ(Colors::Transparent, Color::fromArgb(0, 0, 0, 0));
 }
 
@@ -199,7 +201,7 @@ TEST(Color, ThemeLight1) {
 
 TEST(Color, ThemeHyperlink) {
     auto c = Color::fromTheme(Color::ThemeColor::Hyperlink);
-    EXPECT_NE(c, Colors::Black); // should be a distinct hyperlink color
+    EXPECT_NE(c, Colors::Black);  // should be a distinct hyperlink color
 }
 
 TEST(Color, ThemeWithTint) {
@@ -219,9 +221,8 @@ TEST(Color, ThemeWithShade) {
 TEST(Color, ThemeAllColorsHaveValues) {
     using TC = Color::ThemeColor;
     std::vector<TC> all = {
-        TC::Dark1, TC::Light1, TC::Dark2, TC::Light2,
-        TC::Accent1, TC::Accent2, TC::Accent3, TC::Accent4,
-        TC::Accent5, TC::Accent6, TC::Hyperlink, TC::FollowedHyperlink,
+        TC::Dark1,   TC::Light1,  TC::Dark2,   TC::Light2,  TC::Accent1,   TC::Accent2,
+        TC::Accent3, TC::Accent4, TC::Accent5, TC::Accent6, TC::Hyperlink, TC::FollowedHyperlink,
     };
     for (auto tc : all) {
         auto c = Color::fromTheme(tc);

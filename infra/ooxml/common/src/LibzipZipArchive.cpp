@@ -1,13 +1,16 @@
 #include "oso/ooxml/common/LibzipZipArchive.h"
+
 #include "oso/base/ErrorCode.h"
 
 #include <zip.h>
+
 #include <cstdlib>
 #include <cstring>
 
 namespace oso {
 
-LibzipZipArchive::LibzipZipArchive() : m_archive(nullptr) {}
+LibzipZipArchive::LibzipZipArchive() : m_archive(nullptr) {
+}
 
 LibzipZipArchive::~LibzipZipArchive() {
     if (m_archive) {
@@ -15,9 +18,7 @@ LibzipZipArchive::~LibzipZipArchive() {
     }
 }
 
-LibzipZipArchive::LibzipZipArchive(LibzipZipArchive&& other) noexcept
-    : m_archive(other.m_archive)
-{
+LibzipZipArchive::LibzipZipArchive(LibzipZipArchive&& other) noexcept : m_archive(other.m_archive) {
     other.m_archive = nullptr;
 }
 
@@ -45,13 +46,15 @@ Result<void> LibzipZipArchive::open(const std::string& path) {
             case ZIP_ER_NOENT:
                 return Result<void>::err(ErrorCode::IO_FileNotFound, "File not found: " + path);
             case ZIP_ER_NOZIP:
-                return Result<void>::err(ErrorCode::OOXML_ZipCorrupted, "Not a valid zip file: " + path);
+                return Result<void>::err(ErrorCode::OOXML_ZipCorrupted,
+                                         "Not a valid zip file: " + path);
             case ZIP_ER_OPEN:
                 return Result<void>::err(ErrorCode::IO_AccessDenied, "Cannot open file: " + path);
             case ZIP_ER_READ:
                 return Result<void>::err(ErrorCode::IO_ReadError, "Read error: " + path);
             default:
-                return Result<void>::err(ErrorCode::OOXML_ZipCorrupted,
+                return Result<void>::err(
+                    ErrorCode::OOXML_ZipCorrupted,
                     "Failed to open zip, error code: " + std::to_string(error));
         }
     }
@@ -75,7 +78,8 @@ Result<void> LibzipZipArchive::create(const std::string& path) {
             case ZIP_ER_WRITE:
                 return Result<void>::err(ErrorCode::IO_WriteError, "Write error creating: " + path);
             default:
-                return Result<void>::err(ErrorCode::OOXML_ZipWriteError,
+                return Result<void>::err(
+                    ErrorCode::OOXML_ZipWriteError,
                     "Failed to create zip, error code: " + std::to_string(error));
         }
     }
@@ -92,24 +96,25 @@ Result<void> LibzipZipArchive::writeEntry(const std::string& name,
     // 拷贝数据到堆上，libzip 用 freep=1 接管所有权，在 source 释放时调用 free()
     auto* buf = static_cast<uint8_t*>(std::malloc(data.size()));
     if (!buf) {
-        return Result<void>::err(ErrorCode::OOXML_ZipWriteError, "Memory allocation failed for: " + name);
+        return Result<void>::err(ErrorCode::OOXML_ZipWriteError,
+                                 "Memory allocation failed for: " + name);
     }
     std::memcpy(buf, data.data(), data.size());
 
     auto* src = zip_source_buffer(m_archive, buf, data.size(), 1);
     if (!src) {
         std::free(buf);
-        return Result<void>::err(ErrorCode::OOXML_ZipWriteError,
-            "Failed to create source for: " + name + " - " +
-            std::string(zip_strerror(m_archive)));
+        return Result<void>::err(
+            ErrorCode::OOXML_ZipWriteError,
+            "Failed to create source for: " + name + " - " + std::string(zip_strerror(m_archive)));
     }
 
     zip_int64_t idx = zip_file_add(m_archive, name.c_str(), src, ZIP_FL_OVERWRITE);
     if (idx < 0) {
         zip_source_free(src);
-        return Result<void>::err(ErrorCode::OOXML_ZipWriteError,
-            "Failed to add entry: " + name + " - " +
-            std::string(zip_strerror(m_archive)));
+        return Result<void>::err(
+            ErrorCode::OOXML_ZipWriteError,
+            "Failed to add entry: " + name + " - " + std::string(zip_strerror(m_archive)));
     }
 
     return Result<void>::ok();
@@ -123,14 +128,16 @@ Result<std::vector<IZipArchive::Entry>> LibzipZipArchive::entries() const {
     std::vector<Entry> result;
     zip_int64_t count = zip_get_num_entries(m_archive, 0);
     if (count < 0) {
-        return Result<std::vector<Entry>>::err(ErrorCode::OOXML_ZipCorrupted,
+        return Result<std::vector<Entry>>::err(
+            ErrorCode::OOXML_ZipCorrupted,
             "Failed to get entry count: " + std::string(zip_strerror(m_archive)));
     }
 
     for (zip_int64_t i = 0; i < count; ++i) {
         zip_stat_t stat;
         if (zip_stat_index(m_archive, static_cast<zip_uint64_t>(i), 0, &stat) != 0) {
-            return Result<std::vector<Entry>>::err(ErrorCode::OOXML_ZipCorrupted,
+            return Result<std::vector<Entry>>::err(
+                ErrorCode::OOXML_ZipCorrupted,
                 "Failed to stat entry: " + std::string(zip_strerror(m_archive)));
         }
 
@@ -153,18 +160,20 @@ Result<std::vector<uint8_t>> LibzipZipArchive::readEntry(const std::string& name
     zip_int64_t idx = zip_name_locate(m_archive, name.c_str(), 0);
     if (idx < 0) {
         return Result<std::vector<uint8_t>>::err(ErrorCode::OOXML_ZipEntryMissing,
-            "Entry not found: " + name);
+                                                 "Entry not found: " + name);
     }
 
     zip_stat_t stat;
     if (zip_stat_index(m_archive, static_cast<zip_uint64_t>(idx), 0, &stat) != 0) {
-        return Result<std::vector<uint8_t>>::err(ErrorCode::OOXML_ZipCorrupted,
+        return Result<std::vector<uint8_t>>::err(
+            ErrorCode::OOXML_ZipCorrupted,
             "Failed to stat entry: " + std::string(zip_strerror(m_archive)));
     }
 
     zip_file_t* file = zip_fopen_index(m_archive, static_cast<zip_uint64_t>(idx), 0);
     if (!file) {
-        return Result<std::vector<uint8_t>>::err(ErrorCode::OOXML_ZipCorrupted,
+        return Result<std::vector<uint8_t>>::err(
+            ErrorCode::OOXML_ZipCorrupted,
             "Failed to open entry: " + std::string(zip_strerror(m_archive)));
     }
 
@@ -174,7 +183,7 @@ Result<std::vector<uint8_t>> LibzipZipArchive::readEntry(const std::string& name
 
     if (bytesRead < 0 || static_cast<zip_uint64_t>(bytesRead) != stat.size) {
         return Result<std::vector<uint8_t>>::err(ErrorCode::IO_ReadError,
-            "Failed to read entry data: " + name);
+                                                 "Failed to read entry data: " + name);
     }
 
     return Result<std::vector<uint8_t>>::ok(std::move(buffer));
@@ -199,4 +208,4 @@ bool LibzipZipArchive::isOpen() const {
     return m_archive != nullptr;
 }
 
-} // namespace oso
+}  // namespace oso

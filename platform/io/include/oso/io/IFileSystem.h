@@ -2,6 +2,7 @@
 
 #include "oso/base/Result.h"
 #include "oso/io/IStream.h"
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -10,7 +11,7 @@ namespace oso {
 
 /// 文件系统抽象接口，提供跨平台的文件和目录操作
 class IFileSystem {
-public:
+   public:
     virtual ~IFileSystem() = default;
 
     /// 检查路径是否存在
@@ -36,7 +37,7 @@ public:
 /// 基于 C++17 std::filesystem 和标准 C FILE 操作，
 /// 提供跨 Linux 发行版的本地文件访问。
 class NativeFileSystem : public IFileSystem {
-public:
+   public:
     bool exists(const std::string& path) const override;
     Result<uint64_t> fileSize(const std::string& path) const override;
     Result<std::unique_ptr<IStream>> openRead(const std::string& path) override;
@@ -47,4 +48,4 @@ public:
     std::string tempPath() const override;
 };
 
-} // namespace oso
+}  // namespace oso

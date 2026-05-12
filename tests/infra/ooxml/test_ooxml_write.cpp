@@ -1,9 +1,11 @@
-#include <gtest/gtest.h>
+#include "oso/io/IStream.h"
+#include "oso/ooxml/common/OoxmlNamespaces.h"
+#include "oso/ooxml/read/Libxml2Reader.h"
 #include "oso/ooxml/write/IOoxmlWriter.h"
 #include "oso/ooxml/write/Libxml2Writer.h"
-#include "oso/ooxml/read/Libxml2Reader.h"
-#include "oso/ooxml/common/OoxmlNamespaces.h"
-#include "oso/io/IStream.h"
+
+#include <gtest/gtest.h>
+
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
@@ -29,23 +31,21 @@ RoundTripResult roundTrip(const std::vector<uint8_t>& xml) {
 
     auto flushText = [&]() {
         // 跳过纯空白（xmlTextWriter 缩进），但保留含内容的文本
-        if (!textBuf.empty() &&
-            !std::all_of(textBuf.begin(), textBuf.end(),
-                         [](unsigned char c) { return std::isspace(c); })) {
+        if (!textBuf.empty() && !std::all_of(textBuf.begin(), textBuf.end(),
+                                             [](unsigned char c) { return std::isspace(c); })) {
             r.texts.push_back(textBuf);
         }
         textBuf.clear();
     };
 
-    auto res = reader.parse(xml,
-        [&](const std::string&, const std::string& localName,
-            const std::string&, const std::vector<XmlAttribute>&) {
+    auto res = reader.parse(
+        xml,
+        [&](const std::string&, const std::string& localName, const std::string&,
+            const std::vector<XmlAttribute>&) {
             flushText();
             r.startElements.push_back(localName);
         },
-        [&](const std::string&, const std::string&, const std::string&) {
-            flushText();
-        },
+        [&](const std::string&, const std::string&, const std::string&) { flushText(); },
         [&](const std::string& text) {
             // SAX 可能将文本拆成多个回调，拼合到缓冲区
             textBuf += text;
@@ -55,7 +55,7 @@ RoundTripResult roundTrip(const std::vector<uint8_t>& xml) {
     return r;
 }
 
-} // anonymous namespace
+}  // anonymous namespace
 
 // ============================================================
 // 基本元素写出与 round-trip
@@ -97,8 +97,7 @@ TEST(Libxml2Writer, WriteDeclaration) {
     ASSERT_TRUE(writer.writeEndElement().isOk());
     ASSERT_TRUE(writer.writeEndDocument().isOk());
 
-    std::string xmlStr(reinterpret_cast<const char*>(stream.data().data()),
-                       stream.data().size());
+    std::string xmlStr(reinterpret_cast<const char*>(stream.data().data()), stream.data().size());
     EXPECT_NE(xmlStr.find("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"),
               std::string::npos);
 }
@@ -113,10 +112,8 @@ TEST(Libxml2Writer, WriteDeclarationNoStandalone) {
     ASSERT_TRUE(writer.writeEndElement().isOk());
     ASSERT_TRUE(writer.writeEndDocument().isOk());
 
-    std::string xmlStr(reinterpret_cast<const char*>(stream.data().data()),
-                       stream.data().size());
-    EXPECT_NE(xmlStr.find("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"),
-              std::string::npos);
+    std::string xmlStr(reinterpret_cast<const char*>(stream.data().data()), stream.data().size());
+    EXPECT_NE(xmlStr.find("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"), std::string::npos);
     EXPECT_EQ(xmlStr.find("standalone"), std::string::npos);
 }
 
@@ -147,8 +144,7 @@ TEST(Libxml2Writer, WriteNamespacedDocument) {
     EXPECT_EQ(result.startElements[2], "p");
 
     // xmlTextWriter 应自动声明 w 前缀
-    std::string xmlStr(reinterpret_cast<const char*>(stream.data().data()),
-                       stream.data().size());
+    std::string xmlStr(reinterpret_cast<const char*>(stream.data().data()), stream.data().size());
     EXPECT_NE(xmlStr.find("xmlns:w="), std::string::npos);
 }
 
@@ -173,10 +169,12 @@ TEST(Libxml2Writer, WriteAttributes) {
     Libxml2Reader reader;
     std::vector<XmlAttribute> capturedAttrs;
 
-    auto res = reader.parse(stream.data(),
-        [&](const std::string&, const std::string& localName,
-            const std::string&, const std::vector<XmlAttribute>& attrs) {
-            if (localName == "p") capturedAttrs = attrs;
+    auto res = reader.parse(
+        stream.data(),
+        [&](const std::string&, const std::string& localName, const std::string&,
+            const std::vector<XmlAttribute>& attrs) {
+            if (localName == "p")
+                capturedAttrs = attrs;
         },
         nullptr, nullptr);
 
@@ -251,7 +249,8 @@ TEST(Libxml2Writer, WriteNestedElements) {
     EXPECT_EQ(result.startElements[1], "b");
     EXPECT_EQ(result.startElements[2], "c");
     ASSERT_GE(result.texts.size(), 1u);
-for(int i=0;i<result.texts.size();++i)std::cout<<result.texts[i]<<std::endl;
+    for (int i = 0; i < result.texts.size(); ++i)
+        std::cout << result.texts[i] << std::endl;
     EXPECT_EQ(result.texts[0], "deep");
 }
 
@@ -280,8 +279,7 @@ TEST(Libxml2Writer, WriteSpreadsheetML) {
     EXPECT_EQ(result.startElements[1], "sheetData");
     EXPECT_EQ(result.startElements[2], "row");
 
-    std::string xmlStr(reinterpret_cast<const char*>(stream.data().data()),
-                       stream.data().size());
+    std::string xmlStr(reinterpret_cast<const char*>(stream.data().data()), stream.data().size());
     EXPECT_NE(xmlStr.find("xmlns:x="), std::string::npos);
 }
 
@@ -303,8 +301,7 @@ TEST(Libxml2Writer, WritePresentationML) {
     EXPECT_EQ(result.startElements[0], "presentation");
     EXPECT_EQ(result.startElements[1], "sldIdLst");
 
-    std::string xmlStr(reinterpret_cast<const char*>(stream.data().data()),
-                       stream.data().size());
+    std::string xmlStr(reinterpret_cast<const char*>(stream.data().data()), stream.data().size());
     EXPECT_NE(xmlStr.find("xmlns:p="), std::string::npos);
 }
 
@@ -335,9 +332,8 @@ TEST(Libxml2Writer, WriteMultipleNamespaces) {
     auto result = roundTrip(stream.data());
     ASSERT_TRUE(result.success);
 
-    std::string xmlStr(reinterpret_cast<const char*>(stream.data().data()),
-                       stream.data().size());
-    std::cout<<xmlStr<<std::endl;
+    std::string xmlStr(reinterpret_cast<const char*>(stream.data().data()), stream.data().size());
+    std::cout << xmlStr << std::endl;
     EXPECT_NE(xmlStr.find("xmlns:w="), std::string::npos);
     EXPECT_NE(xmlStr.find("xmlns:r="), std::string::npos);
 }
@@ -361,10 +357,12 @@ TEST(Libxml2Writer, WriteAttributeNoNamespace) {
     Libxml2Reader reader;
     std::vector<XmlAttribute> capturedAttrs;
 
-    auto res = reader.parse(stream.data(),
-        [&](const std::string&, const std::string& localName,
-            const std::string&, const std::vector<XmlAttribute>& attrs) {
-            if (localName == "root") capturedAttrs = attrs;
+    auto res = reader.parse(
+        stream.data(),
+        [&](const std::string&, const std::string& localName, const std::string&,
+            const std::vector<XmlAttribute>& attrs) {
+            if (localName == "root")
+                capturedAttrs = attrs;
         },
         nullptr, nullptr);
 
@@ -399,8 +397,8 @@ TEST(Libxml2Writer, XmllintValidation) {
     ASSERT_TRUE(writer.writeEndDocument().isOk());
 
     std::string tmpPath = "/tmp/oso_write_test_" +
-                          std::to_string(::testing::UnitTest::GetInstance()
-                                         ->random_seed()) + ".xml";
+                          std::to_string(::testing::UnitTest::GetInstance()->random_seed()) +
+                          ".xml";
     {
         auto* fd = std::fopen(tmpPath.c_str(), "wb");
         ASSERT_NE(fd, nullptr);

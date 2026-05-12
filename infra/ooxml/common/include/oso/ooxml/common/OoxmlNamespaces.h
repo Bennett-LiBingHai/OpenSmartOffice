@@ -36,8 +36,7 @@ constexpr std::string_view kPresentationML =
     "http://schemas.openxmlformats.org/presentationml/2006/main";
 
 /// DrawingML — Part 1, Clause 14 (also Clause 20.1, Annex A.4)
-constexpr std::string_view kDrawingML =
-    "http://schemas.openxmlformats.org/drawingml/2006/main";
+constexpr std::string_view kDrawingML = "http://schemas.openxmlformats.org/drawingml/2006/main";
 
 /// DrawingML Picture — Part 1, Clause 20.2
 constexpr std::string_view kDrawingMLPicture =
@@ -80,8 +79,7 @@ constexpr std::string_view kCustomProperties =
     "http://schemas.openxmlformats.org/officeDocument/2006/custom-properties";
 
 /// 数学标记语言 (OMML) — Part 1, Clause 22.1
-constexpr std::string_view kMathML =
-    "http://schemas.openxmlformats.org/officeDocument/2006/math";
+constexpr std::string_view kMathML = "http://schemas.openxmlformats.org/officeDocument/2006/math";
 
 /// 自定义 XML 数据 — Part 1, Clause 15.2.4–15.2.6 / Clause 22.5
 constexpr std::string_view kCustomXml =
@@ -168,20 +166,16 @@ constexpr std::string_view kRelNotesSlide =
 // ================================================================
 
 /// XML Namespace — W3C XML Namespaces 1.0 规范；被 Part 3 Clause 5 引用
-constexpr std::string_view kXml =
-    "http://www.w3.org/XML/1998/namespace";
+constexpr std::string_view kXml = "http://www.w3.org/XML/1998/namespace";
 
 /// Dublin Core Elements — Part 2, Clause 8 (Core Properties)
-constexpr std::string_view kDublinCore =
-    "http://purl.org/dc/elements/1.1/";
+constexpr std::string_view kDublinCore = "http://purl.org/dc/elements/1.1/";
 
 /// Dublin Core Terms — Part 2, Clause 8
-constexpr std::string_view kDublinCoreTerms =
-    "http://purl.org/dc/terms/";
+constexpr std::string_view kDublinCoreTerms = "http://purl.org/dc/terms/";
 
 /// Dublin Core Type — Part 1, Annex D
-constexpr std::string_view kDublinCoreType =
-    "http://purl.org/dc/dcmitype/";
+constexpr std::string_view kDublinCoreType = "http://purl.org/dc/dcmitype/";
 
 /// Markup Compatibility — Part 3, Clause 6
 constexpr std::string_view kMarkupCompatibility =
@@ -196,24 +190,24 @@ constexpr std::string_view kMarkupCompatibility =
 
 inline const std::unordered_map<std::string_view, std::string_view>& prefixMap() {
     static const std::unordered_map<std::string_view, std::string_view> map = {
-        {"w",    kWordprocessingML},
-        {"r",    kRelationships},
-        {"x",    kSpreadsheetML},
-        {"p",    kPresentationML},
-        {"a",    kDrawingML},
-        {"wp",   kDrawingMLWordprocessing},
-        {"pic",  kDrawingMLPicture},
-        {"dsp",  kDrawingMLSpreadsheet},
-        {"m",    kMathML},
-        {"ct",   kContentTypes},
-        {"cp",   kCoreProperties},
-        {"dc",   kDublinCore},
-        {"dcterms",   kDublinCoreTerms},
-        {"dcmitype",  kDublinCoreType},
-        {"mc",   kMarkupCompatibility},
+        {"w", kWordprocessingML},
+        {"r", kRelationships},
+        {"x", kSpreadsheetML},
+        {"p", kPresentationML},
+        {"a", kDrawingML},
+        {"wp", kDrawingMLWordprocessing},
+        {"pic", kDrawingMLPicture},
+        {"dsp", kDrawingMLSpreadsheet},
+        {"m", kMathML},
+        {"ct", kContentTypes},
+        {"cp", kCoreProperties},
+        {"dc", kDublinCore},
+        {"dcterms", kDublinCoreTerms},
+        {"dcmitype", kDublinCoreType},
+        {"mc", kMarkupCompatibility},
     };
     return map;
 }
 
-} // namespace OoxmlNamespaces
-} // namespace oso
+}  // namespace OoxmlNamespaces
+}  // namespace oso

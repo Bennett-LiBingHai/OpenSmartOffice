@@ -1,10 +1,11 @@
-#include <gtest/gtest.h>
 #include "oso/dom/common/DomNode.h"
 #include "oso/dom/common/PropertyBag.h"
+#include "oso/io/IStream.h"
+#include "oso/ooxml/read/Libxml2Reader.h"
 #include "oso/ooxml/write/IOoxmlWriter.h"
 #include "oso/ooxml/write/Libxml2Writer.h"
-#include "oso/ooxml/read/Libxml2Reader.h"
-#include "oso/io/IStream.h"
+
+#include <gtest/gtest.h>
 
 using namespace oso;
 
@@ -220,15 +221,14 @@ void verifyRoundTrip(const DomNode& node, std::vector<std::string>& outLocalName
     node.serialize(writer);
     writer.writeEndDocument();
     Libxml2Reader reader;
-    reader.parse(stream.data(),
-        [&](const std::string&, const std::string& localName,
-            const std::string&, const std::vector<XmlAttribute>&) {
-            outLocalNames.push_back(localName);
-        },
+    reader.parse(
+        stream.data(),
+        [&](const std::string&, const std::string& localName, const std::string&,
+            const std::vector<XmlAttribute>&) { outLocalNames.push_back(localName); },
         nullptr, nullptr);
 }
 
-} // namespace
+}  // namespace
 
 TEST(DomNode, SerializeSingleElement) {
     DomElement root("root");
@@ -265,10 +265,12 @@ TEST(DomNode, SerializeWithAttributes) {
 
     Libxml2Reader reader;
     std::vector<XmlAttribute> captured;
-    reader.parse(stream.data(),
-        [&](const std::string&, const std::string& localName,
-            const std::string&, const std::vector<XmlAttribute>& attrs) {
-            if (localName == "root") captured = attrs;
+    reader.parse(
+        stream.data(),
+        [&](const std::string&, const std::string& localName, const std::string&,
+            const std::vector<XmlAttribute>& attrs) {
+            if (localName == "root")
+                captured = attrs;
         },
         nullptr, nullptr);
 
@@ -288,11 +290,8 @@ TEST(DomNode, SerializeWithText) {
 
     Libxml2Reader reader;
     std::string capturedText;
-    reader.parse(stream.data(),
-        nullptr, nullptr,
-        [&](const std::string& text) {
-            capturedText += text;
-        });
+    reader.parse(stream.data(), nullptr, nullptr,
+                 [&](const std::string& text) { capturedText += text; });
 
     EXPECT_EQ(capturedText, "Hello");
 }

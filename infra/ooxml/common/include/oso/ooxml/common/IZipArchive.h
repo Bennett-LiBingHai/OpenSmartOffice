@@ -1,6 +1,7 @@
 #pragma once
 
 #include "oso/base/Result.h"
+
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -8,15 +9,15 @@
 
 namespace oso {
 
-//Zip 档案读写抽象接口
+// Zip 档案读写抽象接口
 class IZipArchive {
-public:
-    //描述压缩包内单个文件或目录的元数据
+   public:
+    // 描述压缩包内单个文件或目录的元数据
     struct Entry {
-        std::string name;         // 部件路径，如 "word/document.xml"
+        std::string name;  // 部件路径，如 "word/document.xml"
         uint64_t compressedSize;  // 压缩后大小
-        uint64_t uncompressedSize;// 解压后大小
-        bool isDirectory;         // 是否为目录条目
+        uint64_t uncompressedSize;  // 解压后大小
+        bool isDirectory;  // 是否为目录条目
     };
 
     virtual ~IZipArchive() = default;
@@ -68,8 +69,7 @@ public:
      * @param data 条目内容
      * @return 成功返回 OK；失败返回错误码（如档案未创建）
      */
-    virtual Result<void> writeEntry(const std::string& name,
-                                    const std::vector<uint8_t>& data) = 0;
+    virtual Result<void> writeEntry(const std::string& name, const std::vector<uint8_t>& data) = 0;
 
     /**
      * @brief 检查档案是否已打开
@@ -79,4 +79,4 @@ public:
     virtual bool isOpen() const = 0;
 };
 
-} // namespace oso
+}  // namespace oso

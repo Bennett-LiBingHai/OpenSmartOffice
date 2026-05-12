@@ -1,11 +1,12 @@
 #pragma once
 
-#include "oso/ooxml/read/IOoxmlReader.h"
 #include "oso/dom/common/DomNode.h"
+#include "oso/ooxml/read/IOoxmlReader.h"
+
+#include <memory>
 #include <stack>
 #include <string>
 #include <unordered_map>
-#include <memory>
 #include <vector>
 
 namespace oso {
@@ -33,7 +34,7 @@ namespace oso {
 // @endcode
 // ============================================================
 class OoxmlSaxHandler {
-public:
+   public:
     /// 构造 SAX 处理器
     /// @param documentType 文档类型（"word"/"sheet"/"slide"），影响 ElementFactory 的路由
     explicit OoxmlSaxHandler(const std::string& documentType = "word");
@@ -52,12 +53,14 @@ public:
     std::unique_ptr<DomNode> releaseDocument();
 
     /// 获取构建完成的文档（不转移所有权）
-    DomNode* document() const { return m_document.get(); }
+    DomNode* document() const {
+        return m_document.get();
+    }
 
-private:
+   private:
     std::string m_documentType;
     std::unique_ptr<DomNode> m_document;  // 文档根节点
-    std::stack<DomNode*> m_stack;         // 元素栈，栈顶为当前打开的元素
+    std::stack<DomNode*> m_stack;  // 元素栈，栈顶为当前打开的元素
 };
 
-} // namespace oso
+}  // namespace oso

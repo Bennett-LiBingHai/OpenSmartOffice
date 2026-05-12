@@ -1,8 +1,8 @@
 #pragma once
 
 #include "oso/ooxml/common/IZipArchive.h"
-#include <memory>
 
+#include <memory>
 
 struct zip;
 
@@ -15,7 +15,7 @@ namespace oso {
  * 支持移动语义，禁止拷贝语义。
  */
 class LibzipZipArchive : public IZipArchive {
-public:
+   public:
     /**
      * @brief 构造函数
      *
@@ -92,8 +92,7 @@ public:
      * @param data 条目内容
      * @return 成功返回 OK；失败返回错误码（如档案未创建、写入失败）
      */
-    Result<void> writeEntry(const std::string& name,
-                            const std::vector<uint8_t>& data) override;
+    Result<void> writeEntry(const std::string& name, const std::vector<uint8_t>& data) override;
 
     /**
      * @brief 关闭 Zip 档案
@@ -110,8 +109,8 @@ public:
      */
     bool isOpen() const override;
 
-private:
-    struct zip* m_archive; ///< libzip 底层句柄，未打开时为 nullptr
+   private:
+    struct zip* m_archive;  ///< libzip 底层句柄，未打开时为 nullptr
 };
 
-} // namespace oso
+}  // namespace oso
