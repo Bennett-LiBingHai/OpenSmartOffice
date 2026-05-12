@@ -1,0 +1,38 @@
+# Build
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# CMake generated
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+CTestTestfile.cmake
+
+# Coverage
+*.gcda
+*.gcno
+*.lcov
+coverage/
+
+# Qt
+*.moc
+moc_*.cpp
+qrc_*.cpp
+ui_*.h
+
+# Packages
+*.deb
+*.rpm
+*.AppImage
+
+# 其他
+.claude/
+.workbuddy/
