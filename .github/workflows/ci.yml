@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ================================================================
+  # Job 1: 编译 + 单元测试（核心门禁）
+  # ================================================================
+  build-and-test:
+    name: Build & Test (g++-12)
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            g++-12 cmake \
+            libxml2-dev libzip-dev \
+            libspdlog-dev nlohmann-json3-dev \
+            libgtest-dev libcpp-httplib-dev \
+            qt6-base-dev libqt6concurrent-dev
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_BUILD_TYPE=Debug
+
+      - name: Build
+        run: cmake --build build -j$(nproc)
+
+      - name: Test
+        working-directory: build
+        run: ctest --output-on-failure
+
+  # ================================================================
+  # Job 2: clang-format 检查
+  # ================================================================
+  clang-format:
+    name: clang-format
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install clang-format
+        run: sudo apt-get install -y clang-format-14
+
+      - name: Check formatting
+        run: |
+          find . -path ./build -prune -o \( -name '*.cpp' -o -name '*.h' \) -print \
+            | xargs clang-format-14 --dry-run --Werror
+
+  # ================================================================
+  # Job 3: clang-tidy 静态分析
+  # ================================================================
+  clang-tidy:
+    name: clang-tidy
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            g++-12 cmake clang-tidy-14 \
+            libxml2-dev libzip-dev \
+            libspdlog-dev nlohmann-json3-dev \
+            libgtest-dev libcpp-httplib-dev \
+            qt6-base-dev libqt6concurrent-dev
+
+      - name: Configure (with compile_commands.json)
+        run: |
+          cmake -B build -DCMAKE_CXX_COMPILER=g++-12 \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Run clang-tidy
+        run: |
+          find . -path ./build -prune -o \( -name '*.cpp' \) -print \
+            | xargs clang-tidy-14 -p build --quiet 2>&1 \
+            | grep -v "warnings generated" || true
