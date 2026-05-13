@@ -13,20 +13,9 @@ jobs:
   build-and-test:
     name: Build & Test (g++-12)
     runs-on: ubuntu-22.04
-    env:
-      APT_CACHE_KEY: Linux-apt-v1-${{ hashFiles('.github/workflows/ci.yml') }}
-      CMAKE_CACHE_KEY: Linux-cmake-v1-${{ hashFiles('CMakeLists.txt', '**/*.cpp', '**/*.h') }}
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Cache APT packages
-        uses: actions/cache@v4
-        with:
-          path: /var/cache/apt/archives/
-          key: ${{ env.APT_CACHE_KEY }}
-          restore-keys: |
-            Linux-apt-v1-
 
       - name: Install dependencies
         run: |
@@ -37,15 +26,6 @@ jobs:
             libspdlog-dev nlohmann-json3-dev \
             libgtest-dev libcpp-httplib-dev \
             qt6-base-dev libqt6concurrent-dev
-          sudo apt-get clean
-
-      - name: Cache CMake build directory
-        uses: actions/cache@v4
-        with:
-          path: build/
-          key: ${{ env.CMAKE_CACHE_KEY }}
-          restore-keys: |
-            Linux-cmake-v1-
 
       - name: Configure CMake
         run: cmake -B build -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_BUILD_TYPE=Debug
@@ -61,27 +41,14 @@ jobs:
   # Job 2: clang-format 代码格式检查
   # ================================================================
   clang-format:
-    name: clang-format-14
+    name: clang-format
     runs-on: ubuntu-22.04
-    env:
-      APT_CACHE_KEY: Linux-apt-v1-${{ hashFiles('.github/workflows/ci.yml') }}
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Cache APT packages
-        uses: actions/cache@v4
-        with:
-          path: /var/cache/apt/archives/
-          key: ${{ env.APT_CACHE_KEY }}
-          restore-keys: |
-            Linux-apt-v1-
-
       - name: Install clang-format
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends clang-format-14
-          sudo apt-get clean
+        run: sudo apt-get update && sudo apt-get install -y clang-format-14
 
       - name: Check code formatting
         run: |
@@ -92,22 +59,11 @@ jobs:
   # Job 3: clang-tidy 静态代码分析
   # ================================================================
   clang-tidy:
-    name: clang-tidy-14
+    name: clang-tidy
     runs-on: ubuntu-22.04
-    env:
-      APT_CACHE_KEY: Linux-apt-v1-${{ hashFiles('.github/workflows/ci.yml') }}
-      CMAKE_CACHE_KEY: Linux-cmake-v1-${{ hashFiles('CMakeLists.txt', '**/*.cpp', '**/*.h') }}
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Cache APT packages
-        uses: actions/cache@v4
-        with:
-          path: /var/cache/apt/archives/
-          key: ${{ env.APT_CACHE_KEY }}
-          restore-keys: |
-            Linux-apt-v1-
 
       - name: Install dependencies
         run: |
@@ -118,17 +74,8 @@ jobs:
             libspdlog-dev nlohmann-json3-dev \
             libgtest-dev libcpp-httplib-dev \
             qt6-base-dev libqt6concurrent-dev
-          sudo apt-get clean
 
-      - name: Cache CMake build directory
-        uses: actions/cache@v4
-        with:
-          path: build/
-          key: ${{ env.CMAKE_CACHE_KEY }}
-          restore-keys: |
-            Linux-cmake-v1-
-
-      - name: Configure CMake (with compile_commands.json)
+      - name: Configure CMake
         run: |
           cmake -B build -DCMAKE_CXX_COMPILER=g++-12 \
             -DCMAKE_BUILD_TYPE=Debug \
