@@ -25,7 +25,7 @@ jobs:
             libxml2-dev libzip-dev \
             libspdlog-dev nlohmann-json3-dev \
             libgtest-dev libcpp-httplib-dev \
-            qt6-base-dev libqt6concurrent-dev
+            qt6-base-dev
 
       - name: Configure CMake
         run: cmake -B build -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_BUILD_TYPE=Debug
