@@ -19,7 +19,7 @@ ElementFactory& ElementFactory::instance() {
         // 首次初始化时可能在下一句还未执行时进入多个线程
         initialized = true;
 
-        const auto& wns = OoxmlNamespaces::kWordprocessingML;
+        const auto& wns = ooxml_namespaces::kWordprocessingML;
         std::string wnsStr(wns);
 
         // ---- WordprocessingML 元素注册 ----
@@ -28,6 +28,8 @@ ElementFactory& ElementFactory::instance() {
         factory.registerCreator(
             wnsStr, "document",
             [](const std::string& localName, const std::string& nsUri) -> std::unique_ptr<DomNode> {
+                (void)localName;
+                (void)nsUri;
                 auto doc = std::make_unique<WordDocument>();
                 return doc;
             });
@@ -36,6 +38,8 @@ ElementFactory& ElementFactory::instance() {
         factory.registerCreator(
             wnsStr, "body",
             [](const std::string& localName, const std::string& nsUri) -> std::unique_ptr<DomNode> {
+                (void)localName;
+                (void)nsUri;
                 return std::make_unique<Body>();
             });
 
@@ -43,6 +47,8 @@ ElementFactory& ElementFactory::instance() {
         factory.registerCreator(
             wnsStr, "p",
             [](const std::string& localName, const std::string& nsUri) -> std::unique_ptr<DomNode> {
+                (void)localName;
+                (void)nsUri;
                 return std::make_unique<Paragraph>();
             });
 
@@ -50,6 +56,8 @@ ElementFactory& ElementFactory::instance() {
         factory.registerCreator(
             wnsStr, "r",
             [](const std::string& localName, const std::string& nsUri) -> std::unique_ptr<DomNode> {
+                (void)localName;
+                (void)nsUri;
                 return std::make_unique<Run>();
             });
 
@@ -57,6 +65,8 @@ ElementFactory& ElementFactory::instance() {
         factory.registerCreator(
             wnsStr, "t",
             [](const std::string& localName, const std::string& nsUri) -> std::unique_ptr<DomNode> {
+                (void)localName;
+                (void)nsUri;
                 return std::make_unique<Text>();
             });
 
@@ -64,6 +74,8 @@ ElementFactory& ElementFactory::instance() {
         factory.registerCreator(
             wnsStr, "sectPr",
             [](const std::string& localName, const std::string& nsUri) -> std::unique_ptr<DomNode> {
+                (void)localName;
+                (void)nsUri;
                 return std::make_unique<Section>();
             });
     }

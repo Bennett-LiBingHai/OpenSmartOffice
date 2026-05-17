@@ -24,7 +24,7 @@ namespace oso {
 ///   writer.writeEndDocument();
 /// @endcode
 class IOoxmlWriter {
-   public:
+public:
     virtual ~IOoxmlWriter() = default;
 
     /// 设置输出流。必须在调用任何 write* 方法之前调用。
@@ -33,7 +33,8 @@ class IOoxmlWriter {
 
     /// 写出 XML 声明：<?xml version="1.0" encoding="UTF-8"?>
     /// @param standalone 是否添加 standalone="yes" 属性
-    virtual Result<void> writeStartDocument(bool standalone = true) = 0;
+    virtual Result<void> writeStartDocument(bool standalone) = 0;
+    virtual Result<void> writeStartDocument() { return writeStartDocument(true); }
 
     /// 关闭文档，强制刷新所有缓冲输出并关闭所有未闭合元素。
     virtual Result<void> writeEndDocument() = 0;

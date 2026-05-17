@@ -34,10 +34,10 @@ namespace oso {
 // @endcode
 // ============================================================
 class OoxmlSaxHandler {
-   public:
+public:
     /// 构造 SAX 处理器
     /// @param documentType 文档类型（"word"/"sheet"/"slide"），影响 ElementFactory 的路由
-    explicit OoxmlSaxHandler(const std::string& documentType = "word");
+    explicit OoxmlSaxHandler(std::string documentType = "word");
 
     /// 获取 startElement 回调（可传给 IOoxmlReader::parse）
     IOoxmlReader::StartElementFn onStartElement();
@@ -53,11 +53,9 @@ class OoxmlSaxHandler {
     std::unique_ptr<DomNode> releaseDocument();
 
     /// 获取构建完成的文档（不转移所有权）
-    DomNode* document() const {
-        return m_document.get();
-    }
+    [[nodiscard]] DomNode* document() const { return m_document.get(); }
 
-   private:
+private:
     std::string m_documentType;
     std::unique_ptr<DomNode> m_document;  // 文档根节点
     std::stack<DomNode*> m_stack;  // 元素栈，栈顶为当前打开的元素

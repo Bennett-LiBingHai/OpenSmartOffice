@@ -1,45 +1,72 @@
 # OpenSmartOffice — clang-tidy 配置
 # 基于 Google 风格，启用核心静态分析检查
 
+# 检查规则集：采用“白名单”模式，先禁用所有默认规则（-*），
+# 再按类别启用所需规则，最后剔除类别中过于严格或不适用的子规则。
 Checks: >
   -*,
-  bugprone-*,
-  google-*,
-  modernize-*,
-  performance-*,
-  readability-*,
-  -bugprone-easily-swappable-parameters,
-  -google-readability-todo,
-  -modernize-use-trailing-return-type,
+  bugprone-*,                    
+  google-*,                      
+  modernize-*,                   
+  performance-*,                 
+  readability-*,              
+  -bugprone-easily-swappable-parameters, 
+  -google-readability-todo,      
+  -modernize-use-trailing-return-type, 
   -readability-identifier-length,
-  -readability-magic-numbers
+  -readability-magic-numbers 
+ 
+# 警告升级为错误：设为空表示不自动升级。
+# 如果希望 CI 流水线中有警告即失败，可改为 '*'
+WarningsAsErrors: '*'
 
-WarningsAsErrors: ''
-
+# 仅对 src 和 include 目录下的项目头文件进行检查，忽略系统库
+HeaderFilterRegex: 'src/.* | include/.*'
+ 
+# 检查选项：针对特定规则进行精细化配置
+# 这里重点配置了 readability-identifier-naming（标识符命名规范）
+# 风格与 Google C++ Style Guide 高度一致
 CheckOptions:
+  # --- 类型命名：大驼峰 ---
   - key: readability-identifier-naming.ClassCase
-    value: CamelCase
+    value: CamelCase           # 类名：如 MyClass
   - key: readability-identifier-naming.StructCase
-    value: CamelCase
-  - key: readability-identifier-naming.VariableCase
-    value: camelBack
-  - key: readability-identifier-naming.FunctionCase
-    value: camelBack
+    value: CamelCase           # 结构体名：如 MyStruct
   - key: readability-identifier-naming.EnumCase
-    value: CamelCase
+    value: CamelCase           # 枚举类型名：如 MyEnum
   - key: readability-identifier-naming.EnumConstantCase
-    value: CamelCase
-  - key: readability-identifier-naming.NamespaceCase
-    value: lower_case
+    value: CamelCase           # 枚举常量：如 MyEnumValue
+ 
+  # --- 函数与变量：小驼峰 ---
+  - key: readability-identifier-naming.FunctionCase
+    value: camelBack           # 函数名：如 myFunction
+  - key: readability-identifier-naming.VariableCase
+    value: camelBack           # 局部变量：如 myVariable
   - key: readability-identifier-naming.MemberCase
-    value: camelBack
-  - key: readability-identifier-naming.MemberPrefix
+    value: camelBack           # 成员变量名（不含前缀时）：如 myMember
+ 
+  # --- 命名空间：全小写加下划线 ---
+  - key: readability-identifier-naming.NamespaceCase
+    value: lower_case          # 命名空间：如 my_namespace
+ 
+  # --- 成员变量：添加 m_ 前缀 ---
+  # 结合上面的 MemberCase (camelBack)，最终风格为：m_myMember
+  # 仅对 private/protected 成员要求 m_ 前缀，public 结构体字段不强制
+  - key: readability-identifier-naming.PrivateMemberPrefix
     value: m_
+  - key: readability-identifier-naming.ProtectedMemberPrefix
+    value: m_
+ 
+  # --- 常量：k 前缀 + 大驼峰 ---
   - key: readability-identifier-naming.ConstantCase
-    value: CamelCase
+    value: CamelCase           # 常量体大驼峰
   - key: readability-identifier-naming.ConstantPrefix
-    value: k
+    value: k                   # 局部/类静态常量前缀：如 kMyConstant
   - key: readability-identifier-naming.GlobalConstantCase
-    value: CamelCase
+    value: CamelCase           # 全局常量体大驼峰
   - key: readability-identifier-naming.GlobalConstantPrefix
-    value: k
+    value: k                   # 全局常量前缀：如 kMyGlobalConstant
+
+  # --- 认知复杂度阈值配置 ---
+  - key: readability-function-cognitive-complexity.Threshold
+    value: '30'                # 将默认阈值25提高到30

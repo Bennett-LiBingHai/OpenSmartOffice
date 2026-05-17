@@ -15,13 +15,9 @@ struct Color {
 
     // ---- 工厂方法 ----
 
-    static Color fromRgb(uint8_t r, uint8_t g, uint8_t b) {
-        return {r, g, b, 255};
-    }
+    static Color fromRgb(uint8_t r, uint8_t g, uint8_t b) { return {r, g, b, 255}; }
 
-    static Color fromArgb(uint8_t a, uint8_t r, uint8_t g, uint8_t b) {
-        return {r, g, b, a};
-    }
+    static Color fromArgb(uint8_t a, uint8_t r, uint8_t g, uint8_t b) { return {r, g, b, a}; }
 
     static Color fromHex(uint32_t hex) {
         return {static_cast<uint8_t>((hex >> 16) & 0xFF), static_cast<uint8_t>((hex >> 8) & 0xFF),
@@ -168,8 +164,7 @@ struct Color {
             /* 63 */ {51, 0, 0, 255},
             /* 64 */ {0, 0, 0, 255},  // Automatic (system foreground)
         };
-        if (index <= 64)
-            return kIndexed[index];
+        if (index <= 64) return kIndexed[index];
         return {0, 0, 0, 255};
     }
 
@@ -198,14 +193,10 @@ struct Color {
 
     // ---- 比较 ----
 
-    bool operator==(const Color& o) const {
-        return r == o.r && g == o.g && b == o.b && a == o.a;
-    }
-    bool operator!=(const Color& o) const {
-        return !(*this == o);
-    }
+    bool operator==(const Color& o) const { return r == o.r && g == o.g && b == o.b && a == o.a; }
+    bool operator!=(const Color& o) const { return !(*this == o); }
 
-   private:
+private:
     // tint: 将颜色向白色方向变换
     static Color tintColor(const Color& c, double tint) {
         auto t = [tint](uint8_t v) -> uint8_t {
@@ -228,22 +219,22 @@ struct Color {
 };
 
 /// 常用预定义颜色常量
-namespace Colors {
-inline constexpr Color Black = {0, 0, 0, 255};
-inline constexpr Color White = {255, 255, 255, 255};
-inline constexpr Color Red = {255, 0, 0, 255};
-inline constexpr Color Green = {0, 255, 0, 255};
-inline constexpr Color Blue = {0, 0, 255, 255};
-inline constexpr Color Yellow = {255, 255, 0, 255};
-inline constexpr Color Cyan = {0, 255, 255, 255};
-inline constexpr Color Magenta = {255, 0, 255, 255};
-inline constexpr Color Transparent = {0, 0, 0, 0};
-inline constexpr Color Gray = {128, 128, 128, 255};
-inline constexpr Color DarkGray = {64, 64, 64, 255};
-inline constexpr Color LightGray = {192, 192, 192, 255};
-inline constexpr Color Orange = {255, 165, 0, 255};
-inline constexpr Color Pink = {255, 192, 203, 255};
-inline constexpr Color Brown = {165, 42, 42, 255};
-}  // namespace Colors
+namespace colors {
+inline constexpr Color kBlack = {0, 0, 0, 255};
+inline constexpr Color kWhite = {255, 255, 255, 255};
+inline constexpr Color kRed = {255, 0, 0, 255};
+inline constexpr Color kGreen = {0, 255, 0, 255};
+inline constexpr Color kBlue = {0, 0, 255, 255};
+inline constexpr Color kYellow = {255, 255, 0, 255};
+inline constexpr Color kCyan = {0, 255, 255, 255};
+inline constexpr Color kMagenta = {255, 0, 255, 255};
+inline constexpr Color kTransparent = {0, 0, 0, 0};
+inline constexpr Color kGray = {128, 128, 128, 255};
+inline constexpr Color kDarkGray = {64, 64, 64, 255};
+inline constexpr Color kLightGray = {192, 192, 192, 255};
+inline constexpr Color kOrange = {255, 165, 0, 255};
+inline constexpr Color kPink = {255, 192, 203, 255};
+inline constexpr Color kBrown = {165, 42, 42, 255};
+}  // namespace colors
 
 }  // namespace oso

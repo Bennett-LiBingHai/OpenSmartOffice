@@ -46,7 +46,7 @@ void DomNode::serializeStartElement(IOoxmlWriter& writer) const {
             std::string prefix = qName.substr(0, colonPos);
             std::string localName = qName.substr(colonPos + 1);
             // 通过前缀查找命名空间 URI
-            const auto& prefixMap = OoxmlNamespaces::prefixMap();
+            const auto& prefixMap = ooxml_namespaces::prefixMap();
             auto it = prefixMap.find(prefix);
             if (it != prefixMap.end()) {
                 writer.writeAttribute(std::string(it->second), localName, value);
@@ -59,9 +59,7 @@ void DomNode::serializeStartElement(IOoxmlWriter& writer) const {
     }
 }
 
-void DomNode::serializeEndElement(IOoxmlWriter& writer) const {
-    writer.writeEndElement();
-}
+void DomNode::serializeEndElement(IOoxmlWriter& writer) { writer.writeEndElement(); }
 
 void DomNode::serialize(IOoxmlWriter& writer) const {
     serializeStartElement(writer);

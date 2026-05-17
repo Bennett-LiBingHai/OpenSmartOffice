@@ -23,7 +23,7 @@ TEST(QtTaskExecutor, SubmitSingleTask) {
     std::atomic<bool> done{false};
 
     executor.submit([&done] { done = true; });
-    auto result = executor.waitAll();
+    auto result = executor.waitAll(0);
 
     ASSERT_TRUE(result.isOk()) << result.message();
     EXPECT_TRUE(done);
@@ -45,7 +45,7 @@ TEST(QtTaskExecutor, SubmitTenTasksCollectResults) {
         });
     }
 
-    auto waitResult = executor.waitAll();
+    auto waitResult = executor.waitAll(0);
     ASSERT_TRUE(waitResult.isOk()) << waitResult.message();
 
     EXPECT_EQ(results->size(), 10u);
@@ -58,13 +58,13 @@ TEST(QtTaskExecutor, SubmitTenTasksCollectResults) {
 TEST(QtTaskExecutor, SubmitEmptyTask) {
     QtTaskExecutor executor;
     executor.submit([] {});
-    auto result = executor.waitAll();
+    auto result = executor.waitAll(0);
     ASSERT_TRUE(result.isOk()) << result.message();
 }
 
 TEST(QtTaskExecutor, SubmitZeroTasksWaitAllReturnsOk) {
     QtTaskExecutor executor;
-    auto result = executor.waitAll();
+    auto result = executor.waitAll(0);
     EXPECT_TRUE(result.isOk());
     EXPECT_EQ(executor.pendingCount(), 0u);
 }
@@ -80,12 +80,12 @@ TEST(QtTaskExecutor, WaitAllTimeout) {
     executor.submit([] { std::this_thread::sleep_for(500ms); });
 
     // 只等 10ms，应该超时
-    auto result = executor.waitAll(10ms);
+    auto result = executor.waitAll(10);
     EXPECT_TRUE(result.isErr());
-    EXPECT_EQ(result.error(), ErrorCode::Concurrent_Timeout);
+    EXPECT_EQ(result.error(), ErrorCode::ConcurrentTimeout);
 
     // 最终等完任务
-    auto result2 = executor.waitAll();
+    auto result2 = executor.waitAll(0);
     ASSERT_TRUE(result2.isOk());
 }
 
@@ -99,7 +99,7 @@ TEST(QtTaskExecutor, WaitAllZeroTimeoutWaitsForever) {
     });
 
     // timeout=0 表示无限等待
-    auto result = executor.waitAll(std::chrono::milliseconds(0));
+    auto result = executor.waitAll(0);
     ASSERT_TRUE(result.isOk()) << result.message();
     EXPECT_TRUE(done);
 }
@@ -139,7 +139,7 @@ TEST(QtTaskExecutor, HighPriorityTasksRunBeforeLowPriority) {
         10);  // 高优先级 — 后进队列，但应被优先取出
 
     gate = true;
-    executor.waitAll();
+    executor.waitAll(0);
 
     ASSERT_EQ(orderPtr->size(), 2u);
     // QThreadPool 按优先级从队列取任务，高优先级先出队
@@ -170,7 +170,7 @@ TEST(QtTaskExecutor, SubmitFromMultipleThreads) {
     t3.join();
     t4.join();
 
-    executor.waitAll();
+    executor.waitAll(0);
     EXPECT_EQ(counter.load(), 100);
 }
 
@@ -195,7 +195,7 @@ TEST(QtTaskExecutor, PendingCountDecrementsAsTasksComplete) {
     EXPECT_GT(executor.pendingCount(), 0u);
 
     release = true;
-    executor.waitAll();
+    executor.waitAll(0);
     EXPECT_EQ(executor.pendingCount(), 0u);
 }
 
@@ -214,7 +214,7 @@ TEST(QtTaskExecutor, TaskThrowsException) {
     executor.submit([&afterException] { afterException = true; });
 
     // waitAll 不应崩溃（QtConcurrent 会捕获异常并存储在 QFuture 中）
-    auto result = executor.waitAll();
+    auto result = executor.waitAll(0);
     // QFuture 的异常不会传播到 waitAll，所以应该成功
     EXPECT_TRUE(result.isOk());
     EXPECT_TRUE(afterException);
@@ -249,14 +249,14 @@ TEST(QtTaskExecutor, SubmitAfterWaitAll) {
     for (int i = 0; i < 5; ++i) {
         executor.submit([i] { std::this_thread::sleep_for(1ms); });
     }
-    ASSERT_TRUE(executor.waitAll().isOk());
+    ASSERT_TRUE(executor.waitAll(0).isOk());
 
     // 第二轮
     std::atomic<int> counter{0};
     for (int i = 0; i < 5; ++i) {
         executor.submit([&counter] { counter.fetch_add(1); });
     }
-    ASSERT_TRUE(executor.waitAll().isOk());
+    ASSERT_TRUE(executor.waitAll(0).isOk());
     EXPECT_EQ(counter.load(), 5);
 }
 
@@ -272,7 +272,7 @@ TEST(ITaskExecutor, PolymorphicUse) {
     for (int i = 0; i < 3; ++i) {
         ref.submit([&count] { count.fetch_add(1); });
     }
-    ref.waitAll();
+    ref.waitAll(0);
     EXPECT_EQ(count.load(), 3);
 }
 
@@ -285,7 +285,6 @@ TEST(QtTaskExecutor, TasksExecuteInParallel) {
 
     std::atomic<int> maxConcurrency{0};
     std::atomic<int> inFlight{0};
-    std::chrono::milliseconds start;
 
     for (int i = 0; i < 8; ++i) {
         executor.submit([&inFlight, &maxConcurrency] {
@@ -299,7 +298,7 @@ TEST(QtTaskExecutor, TasksExecuteInParallel) {
         });
     }
 
-    executor.waitAll();
+    executor.waitAll(0);
 
     // 至少有 2 个任务在并行执行（保守值）
     EXPECT_GE(maxConcurrency.load(), 2);
@@ -318,7 +317,7 @@ TEST(QtTaskExecutor, StressTestManySmallTasks) {
         executor.submit([&counter] { counter.fetch_add(1); });
     }
 
-    auto result = executor.waitAll();
+    auto result = executor.waitAll(0);
     ASSERT_TRUE(result.isOk()) << result.message();
     EXPECT_EQ(counter.load(), kNumTasks);
 }

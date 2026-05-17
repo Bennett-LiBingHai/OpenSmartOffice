@@ -1,3 +1,21 @@
+# 全局严格警告函数
+function(oso_add_strict_warnings target)
+    target_compile_options(${target} PRIVATE
+        $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:
+            -Wall
+            -Wextra
+            -Wpedantic
+            -Werror
+            -Wshadow
+            -Wnon-virtual-dtor
+        >-Wall -Wextra -Wpedantic -Werror
+        $<$<CXX_COMPILER_ID:MSVC>:
+            /W4
+            /WX
+        >
+    )
+endfunction()
+
 #======================================================================
 #  oso_add_module — 用于添加 OSO 库目标的标准宏
 #
@@ -24,9 +42,9 @@ macro(oso_add_module)
     # - 输入: ${ARGN} (宏调用时的所有参数列表)
     cmake_parse_arguments(
         OSO_MODULE
-        ""
+        "NO_STRICT_WARNINGS"
         "NAME;DIR;LAYER"
-        "PUBLIC_DEPS;PRIVATE_DEPS;SOURCES"
+        "PUBLIC_DEPS;PRIVATE_DEPS;SOURCES;COMPILE_OPTIONS"
         ${ARGN}
     )
 
@@ -131,7 +149,28 @@ macro(oso_add_module)
     endif()
 
     #------------------------------------------------------------------
-    # 8. 创建命名空间别名 (Alias)
+    # 8. 配置编译选项和严格警告
+    #------------------------------------------------------------------
+    # 为静态库默认添加严格警告，除非显式指定NO_STRICT_WARNINGS
+    if(_sources AND NOT OSO_MODULE_NO_STRICT_WARNINGS)
+        oso_add_strict_warnings(${OSO_MODULE_NAME})
+    endif()
+
+    # 添加模块特定的编译选项
+    if(OSO_MODULE_COMPILE_OPTIONS)
+        if(_sources)
+            target_compile_options(${OSO_MODULE_NAME} PRIVATE
+                ${OSO_MODULE_COMPILE_OPTIONS}
+            )
+        else()
+            target_compile_options(${OSO_MODULE_NAME} INTERFACE
+                ${OSO_MODULE_COMPILE_OPTIONS}
+            )
+        endif()
+    endif()
+
+    #------------------------------------------------------------------
+    # 9. 创建命名空间别名 (Alias)
     #------------------------------------------------------------------
     # 逻辑: 将 "oso_base" 替换为 "oso::base"
     string(REPLACE "oso_" "oso::" _alias ${OSO_MODULE_NAME})

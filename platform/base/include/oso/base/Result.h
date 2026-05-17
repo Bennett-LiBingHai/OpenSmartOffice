@@ -12,54 +12,37 @@ namespace oso {
 
 template <typename T>
 class Result {
-   public:
+public:
     // 构造成功结果
-    static Result ok(T value) {
-        return Result(ErrorCode::Ok, std::move(value), "");
-    }
+    static Result ok(T value) { return {ErrorCode::Ok, std::move(value), ""}; }
 
     // 构造错误结果
     static Result err(ErrorCode code, std::string message = "") {
-        return Result(code, T{}, std::move(message));
+        return {code, T{}, std::move(message)};
     }
 
     // 是否成功
-    bool isOk() const {
-        return m_code.isOk();
-    }
+    [[nodiscard]] bool isOk() const { return m_code.isOk(); }
     // 是否失败
-    bool isErr() const {
-        return m_code.isErr();
-    }
+    [[nodiscard]] bool isErr() const { return m_code.isErr(); }
 
     // 获取值（非常量）
-    T& value() {
-        return m_value;
-    }
+    [[nodiscard]] T& value() { return m_value; }
     // 获取值（常量）
-    const T& value() const {
-        return m_value;
-    }
+    [[nodiscard]] const T& value() const { return m_value; }
 
     // 转移值所有权（移动语义）
-    T&& takeValue() {
-        return std::move(m_value);
-    }
+    T&& takeValue() { return std::move(m_value); }
 
     // 获取错误码
-    const ErrorCode& error() const {
-        return m_code;
-    }
+    [[nodiscard]] const ErrorCode& error() const { return m_code; }
     // 获取错误信息
-    const std::string& message() const {
-        return m_message;
-    }
+    [[nodiscard]] const std::string& message() const { return m_message; }
 
-   private:
+private:
     // 私有构造函数，通过静态方法 ok/err 创建对象
     Result(ErrorCode code, T value, std::string message)
-        : m_code(code), m_value(std::move(value)), m_message(std::move(message)) {
-    }
+        : m_code(code), m_value(std::move(value)), m_message(std::move(message)) {}
 
     ErrorCode m_code;  // 错误码
     T m_value;  // 成功时存储的值
@@ -69,31 +52,20 @@ class Result {
 // void 类型特化（无返回值的结果）
 template <>
 class Result<void> {
-   public:
-    static Result ok() {
-        return Result(ErrorCode::Ok, "");
-    }
+public:
+    static Result ok() { return {ErrorCode::Ok, ""}; }
     static Result err(ErrorCode code, std::string message = "") {
-        return Result(code, std::move(message));
+        return {code, std::move(message)};
     }
 
-    bool isOk() const {
-        return m_code.isOk();
-    }
-    bool isErr() const {
-        return m_code.isErr();
-    }
+    [[nodiscard]] bool isOk() const { return m_code.isOk(); }
+    [[nodiscard]] bool isErr() const { return m_code.isErr(); }
 
-    const ErrorCode& error() const {
-        return m_code;
-    }
-    const std::string& message() const {
-        return m_message;
-    }
+    [[nodiscard]] const ErrorCode& error() const { return m_code; }
+    [[nodiscard]] const std::string& message() const { return m_message; }
 
-   private:
-    Result(ErrorCode code, std::string message) : m_code(code), m_message(std::move(message)) {
-    }
+private:
+    Result(ErrorCode code, std::string message) : m_code(code), m_message(std::move(message)) {}
 
     ErrorCode m_code;  // 错误码
     std::string m_message;  // 错误信息
@@ -117,6 +89,6 @@ class Result<void> {
         return Result<std::remove_reference_t<decltype(_oso_result.value())>>::err( \
             _oso_result.error(), _oso_result.message());                            \
     }                                                                               \
-    _var = _oso_result.takeValue();
+    (_var) = _oso_result.takeValue();
 
 }  // namespace oso

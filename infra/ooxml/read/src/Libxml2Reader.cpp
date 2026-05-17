@@ -5,6 +5,7 @@
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 
+#include <array>
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
@@ -16,6 +17,7 @@ namespace oso {
 /// 内部状态，持有回调引用和 libxml2 解析上下文。
 /// 设计为可重置结构，每次 parse/parseStream 调用时复用。
 struct Libxml2Reader::Impl {
+    // public members (internal to this file)
     IOoxmlReader::StartElementFn onStart;
     IOoxmlReader::EndElementFn onEnd;
     IOoxmlReader::CharactersFn onText;
@@ -27,7 +29,7 @@ struct Libxml2Reader::Impl {
         onStart = nullptr;
         onEnd = nullptr;
         onText = nullptr;
-        if (ctxt) {
+        if (ctxt != nullptr) {
             xmlFreeParserCtxt(ctxt);
             ctxt = nullptr;
         }
@@ -36,12 +38,9 @@ struct Libxml2Reader::Impl {
     }
 };
 
-Libxml2Reader::Libxml2Reader() : m_impl(std::make_unique<Impl>()) {
-}
+Libxml2Reader::Libxml2Reader() : m_impl(std::make_unique<Impl>()) {}
 
-Libxml2Reader::~Libxml2Reader() {
-    m_impl->reset();
-}
+Libxml2Reader::~Libxml2Reader() { m_impl->reset(); }
 
 Libxml2Reader::Libxml2Reader(Libxml2Reader&&) noexcept = default;
 Libxml2Reader& Libxml2Reader::operator=(Libxml2Reader&&) noexcept = default;
@@ -52,20 +51,21 @@ Libxml2Reader& Libxml2Reader::operator=(Libxml2Reader&&) noexcept = default;
 namespace {
 
 // 识别到<element>时触发
-static void onStartElementNs(void* ctx, const xmlChar* localname, const xmlChar* prefix,
-                             const xmlChar* nsUri, int nbNamespaces, const xmlChar** namespaces,
-                             int nbAttributes, int nbDefaulted, const xmlChar** attributes) {
+void onStartElementNs(void* ctx, const xmlChar* localname, const xmlChar* prefix,
+                      const xmlChar* nsUri, int nbNamespaces, const xmlChar** namespaces,
+                      int nbAttributes, int nbDefaulted, const xmlChar** attributes) {
     (void)nbNamespaces;
     (void)namespaces;
     (void)nbDefaulted;
 
     auto* impl = static_cast<Libxml2Reader::Impl*>(ctx);
-    if (!impl->onStart)
+    if (!impl->onStart) {
         return;
+    }
 
-    std::string nsUriStr = nsUri ? reinterpret_cast<const char*>(nsUri) : "";
-    std::string localStr = localname ? reinterpret_cast<const char*>(localname) : "";
-    std::string prefixStr = prefix ? reinterpret_cast<const char*>(prefix) : "";
+    std::string nsUriStr = (nsUri != nullptr) ? reinterpret_cast<const char*>(nsUri) : "";
+    std::string localStr = (localname != nullptr) ? reinterpret_cast<const char*>(localname) : "";
+    std::string prefixStr = (prefix != nullptr) ? reinterpret_cast<const char*>(prefix) : "";
 
     std::string qName;
     if (!prefixStr.empty()) {
@@ -80,22 +80,26 @@ static void onStartElementNs(void* ctx, const xmlChar* localname, const xmlChar*
     for (int i = 0; i < nbAttributes; ++i) {
         int idx = i * 5;
         XmlAttribute attr;
-        if (attributes[idx + 0]) {
+        if (attributes[idx + 0] != nullptr) {
             // value 以 (start, end) 指针给出
             const xmlChar* valStart = attributes[idx + 3];
             const xmlChar* valEnd = attributes[idx + 4];
-            if (valStart && valEnd && valEnd > valStart) {
+            if ((valStart != nullptr) && (valEnd != nullptr) && valEnd > valStart) {
                 attr.value.assign(reinterpret_cast<const char*>(valStart),
                                   static_cast<size_t>(valEnd - valStart));
-            } else if (valStart) {
+            } else if (valStart != nullptr) {
                 attr.value = reinterpret_cast<const char*>(valStart);
             }
         }
-        attr.localName =
-            attributes[idx + 0] ? reinterpret_cast<const char*>(attributes[idx + 0]) : "";
-        attr.prefix = attributes[idx + 1] ? reinterpret_cast<const char*>(attributes[idx + 1]) : "";
-        attr.namespaceUri =
-            attributes[idx + 2] ? reinterpret_cast<const char*>(attributes[idx + 2]) : "";
+        attr.localName = (attributes[idx + 0] != nullptr)
+                             ? reinterpret_cast<const char*>(attributes[idx + 0])
+                             : "";
+        attr.prefix = (attributes[idx + 1] != nullptr)
+                          ? reinterpret_cast<const char*>(attributes[idx + 1])
+                          : "";
+        attr.namespaceUri = (attributes[idx + 2] != nullptr)
+                                ? reinterpret_cast<const char*>(attributes[idx + 2])
+                                : "";
         attrs.push_back(std::move(attr));
     }
 
@@ -103,15 +107,16 @@ static void onStartElementNs(void* ctx, const xmlChar* localname, const xmlChar*
 }
 
 // 识别到</element>时触发
-static void onEndElementNs(void* ctx, const xmlChar* localname, const xmlChar* prefix,
-                           const xmlChar* nsUri) {
+void onEndElementNs(void* ctx, const xmlChar* localname, const xmlChar* prefix,
+                    const xmlChar* nsUri) {
     auto* impl = static_cast<Libxml2Reader::Impl*>(ctx);
-    if (!impl->onEnd)
+    if (!impl->onEnd) {
         return;
+    }
 
-    std::string nsUriStr = nsUri ? reinterpret_cast<const char*>(nsUri) : "";
-    std::string localStr = localname ? reinterpret_cast<const char*>(localname) : "";
-    std::string prefixStr = prefix ? reinterpret_cast<const char*>(prefix) : "";
+    std::string nsUriStr = (nsUri != nullptr) ? reinterpret_cast<const char*>(nsUri) : "";
+    std::string localStr = (localname != nullptr) ? reinterpret_cast<const char*>(localname) : "";
+    std::string prefixStr = (prefix != nullptr) ? reinterpret_cast<const char*>(prefix) : "";
 
     std::string qName;
     if (!prefixStr.empty()) {
@@ -124,43 +129,46 @@ static void onEndElementNs(void* ctx, const xmlChar* localname, const xmlChar* p
 }
 
 // 识别到内容时触发
-static void onCharacters(void* ctx, const xmlChar* ch, int len) {
+void onCharacters(void* ctx, const xmlChar* ch, int len) {
     auto* impl = static_cast<Libxml2Reader::Impl*>(ctx);
-    if (!impl->onText || !ch || len <= 0)
+    if (!impl->onText || ch == nullptr || len <= 0) {
         return;
+    }
     impl->onText(std::string(reinterpret_cast<const char*>(ch), static_cast<size_t>(len)));
 }
 
 // 发生警告时调用
-static void onWarning(void*, const char* msg, ...) {
+void onWarning(void* ctx, const char* msg, ...) {
     // 警告静默忽略
+    (void)ctx;
     (void)msg;
 }
 
 // 发生错误时调用
-static void onError(void* ctx, const char* msg, ...) {
+void onError(void* ctx, const char* msg, ...) {
     auto* impl = static_cast<Libxml2Reader::Impl*>(ctx);
     impl->error = true;
 
     va_list args;
     va_start(args, msg);
-    char buf[1024];
-    std::vsnprintf(buf, sizeof(buf), msg, args);
+    std::array<char, 1024> buf;
+    std::vsnprintf(buf.data(), buf.size(), msg, args);
     va_end(args);
-    impl->errorMessage = buf;
+    impl->errorMessage = buf.data();
 }
 
 // xmlParseDocument开始时调用
-static int streamReadCallback(void* context, char* buffer, int len) {
+int streamReadCallback(void* context, char* buffer, int len) {
     auto* stream = static_cast<IStream*>(context);
     auto result = stream->read(reinterpret_cast<uint8_t*>(buffer), static_cast<size_t>(len));
-    if (result.isErr())
+    if (result.isErr()) {
         return -1;
+    }
     return static_cast<int>(result.value());
 }
 
 // xmlParseDocument结束时调用
-static int streamCloseCallback(void* /*context*/) {
+int streamCloseCallback(void* /*context*/) {
     return 0;  // 不负责关闭 IStream
 }
 
@@ -173,7 +181,7 @@ static int streamCloseCallback(void* /*context*/) {
 Result<void> Libxml2Reader::parse(const std::vector<uint8_t>& xmlData, StartElementFn onStart,
                                   EndElementFn onEnd, CharactersFn onText) {
     if (xmlData.empty()) {
-        return Result<void>::err(ErrorCode::OOXML_XmlParseError, "Empty XML data");
+        return Result<void>::err(ErrorCode::OOXMLXmlParseError, "Empty XML data");
     }
 
     m_impl->reset();
@@ -200,7 +208,7 @@ Result<void> Libxml2Reader::parse(const std::vector<uint8_t>& xmlData, StartElem
 
     if (result != 0 || m_impl->error) {
         std::string msg = m_impl->errorMessage.empty() ? "XML parse error" : m_impl->errorMessage;
-        return Result<void>::err(ErrorCode::OOXML_XmlParseError, std::move(msg));
+        return Result<void>::err(ErrorCode::OOXMLXmlParseError, std::move(msg));
     }
 
     m_impl->reset();
@@ -233,9 +241,9 @@ Result<void> Libxml2Reader::parseStream(IStream& stream, StartElementFn onStart,
     m_impl->ctxt = xmlCreateIOParserCtxt(&saxHandler, m_impl.get(), streamReadCallback,
                                          streamCloseCallback, &stream, XML_CHAR_ENCODING_UTF8);
 
-    if (!m_impl->ctxt) {
+    if (m_impl->ctxt == nullptr) {
         m_impl->reset();
-        return Result<void>::err(ErrorCode::OOXML_XmlParseError, "Failed to create parser context");
+        return Result<void>::err(ErrorCode::OOXMLXmlParseError, "Failed to create parser context");
     }
 
     xmlCtxtUseOptions(m_impl->ctxt, XML_PARSE_NONET);
@@ -245,7 +253,7 @@ Result<void> Libxml2Reader::parseStream(IStream& stream, StartElementFn onStart,
     if (result != 0 || m_impl->error) {
         std::string errMsg =
             m_impl->errorMessage.empty() ? "XML parse error" : m_impl->errorMessage;
-        return Result<void>::err(ErrorCode::OOXML_XmlParseError, std::move(errMsg));
+        return Result<void>::err(ErrorCode::OOXMLXmlParseError, std::move(errMsg));
     }
 
     m_impl->reset();

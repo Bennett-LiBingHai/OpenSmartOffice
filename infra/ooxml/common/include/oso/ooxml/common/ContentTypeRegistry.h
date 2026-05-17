@@ -25,7 +25,7 @@ namespace oso {
 // ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
 // </Types>
 class ContentTypeRegistry {
-   public:
+public:
     //</Types>中的部件
     struct Entry {
         std::string partName;  // 部件路径（Override）或扩展名（Default），不含前导 "/"
@@ -51,9 +51,7 @@ class ContentTypeRegistry {
     // 获取Default的ContentType
     Result<std::string> getTypeForExtension(std::string_view ext) const;
     // 获取所有部件
-    const std::vector<Entry>& allTypes() const {
-        return m_entries;
-    }
+    const std::vector<Entry>& allTypes() const { return m_entries; }
 
     ContentTypeRegistry() = default;
 
@@ -65,7 +63,7 @@ class ContentTypeRegistry {
     // 找不到返回空字符串
     static std::string_view lookupDefault(const std::string& ext);
 
-   private:
+private:
     // Extension -> Mime映射常量
     static const std::unordered_map<std::string_view, std::string_view> kExtensionMime;
 

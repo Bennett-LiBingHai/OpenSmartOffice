@@ -19,7 +19,7 @@
 namespace oso {
 
 /// 日志级别，按严重程度递增排列
-enum class LogLevel {
+enum class LogLevel : std::uint8_t {
     Debug = 0,  ///< 调试信息
     Info,  ///< 一般信息
     Warn,  ///< 警告
@@ -29,7 +29,7 @@ enum class LogLevel {
 
 /// 日志管理器（单例），封装 spdlog 提供统一的日志输出
 class LogManager {
-   public:
+public:
     /// 日志配置
     struct Config {
         std::string logFile;  // 文件输出路径，空则不写文件
@@ -46,7 +46,7 @@ class LogManager {
     /// 使用指定配置初始化日志系统
     void init(const Config& config);
     /// 是否已完成初始化
-    bool isInitialized() const;
+    [[nodiscard]] bool isInitialized() const;
 
     /// 记录一条日志
     /// @param level 日志级别
@@ -60,7 +60,7 @@ class LogManager {
     LogManager(const LogManager&) = delete;
     LogManager& operator=(const LogManager&) = delete;
 
-   private:
+private:
     LogManager() = default;
     ~LogManager();
 
@@ -72,10 +72,9 @@ class LogManager {
 // 支持 LOG(INFO) << "hello " << 42; 语法
 
 class LogStream {
-   public:
+public:
     LogStream(LogLevel level, const char* file, int line)
-        : m_level(level), m_file(file), m_line(line) {
-    }
+        : m_level(level), m_file(file), m_line(line) {}
 
     ~LogStream() {
         if (LogManager::instance().isInitialized()) {
@@ -92,7 +91,7 @@ class LogStream {
     LogStream(const LogStream&) = delete;
     LogStream& operator=(const LogStream&) = delete;
 
-   private:
+private:
     LogLevel m_level;
     const char* m_file;
     int m_line;

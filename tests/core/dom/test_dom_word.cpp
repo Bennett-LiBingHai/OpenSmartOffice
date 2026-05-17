@@ -364,11 +364,9 @@ TEST(DomWordIntegration, SerializeRoundTripWordDocument) {
         [&](const std::string& text) {
             bool isSpace = true;
             for (const auto& c : text) {
-                if (!isspace(c))
-                    isSpace = false;
+                if (!isspace(c)) isSpace = false;
             }
-            if (isSpace)
-                return;
+            if (isSpace) return;
             capturedText += text;
         });
 

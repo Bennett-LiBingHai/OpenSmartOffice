@@ -10,7 +10,8 @@ namespace oso {
 // OoxmlSaxHandler 实现
 // ============================================================
 
-OoxmlSaxHandler::OoxmlSaxHandler(const std::string& documentType) : m_documentType(documentType) {
+OoxmlSaxHandler::OoxmlSaxHandler(std::string documentType)
+    : m_documentType(std::move(documentType)) {
     // 初始化 ElementFactory（触发静态注册）
     ElementFactory::instance();
 }
@@ -57,12 +58,13 @@ IOoxmlReader::EndElementFn OoxmlSaxHandler::onEndElement() {
 
 IOoxmlReader::CharactersFn OoxmlSaxHandler::onCharacters() {
     return [this](const std::string& text) {
-        if (m_stack.empty())
+        if (m_stack.empty()) {
             return;
+        }
 
         bool isWhitespaceOnly = true;
         for (unsigned char c : text) {
-            if (!std::isspace(c)) {
+            if (std::isspace(c) == 0) {
                 isWhitespaceOnly = false;
                 break;
             }
@@ -92,8 +94,6 @@ IOoxmlReader::CharactersFn OoxmlSaxHandler::onCharacters() {
     };
 }
 
-std::unique_ptr<DomNode> OoxmlSaxHandler::releaseDocument() {
-    return std::move(m_document);
-}
+std::unique_ptr<DomNode> OoxmlSaxHandler::releaseDocument() { return std::move(m_document); }
 
 }  // namespace oso

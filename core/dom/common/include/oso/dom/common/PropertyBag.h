@@ -12,29 +12,21 @@ namespace oso {
 // 与 DomNode::m_attributes 配合使用。
 // ============================================================
 class PropertyBag {
-   public:
-    void set(const std::string& key, const std::string& value) {
-        m_props[key] = value;
-    }
+public:
+    void set(const std::string& key, const std::string& value) { m_props[key] = value; }
 
     const std::string& get(const std::string& key, const std::string& defaultValue = "") const {
         auto it = m_props.find(key);
         return it != m_props.end() ? it->second : defaultValue;
     }
 
-    bool has(const std::string& key) const {
-        return m_props.find(key) != m_props.end();
-    }
+    bool has(const std::string& key) const { return m_props.find(key) != m_props.end(); }
 
-    const std::unordered_map<std::string, std::string>& all() const {
-        return m_props;
-    }
+    const std::unordered_map<std::string, std::string>& all() const { return m_props; }
 
-    bool empty() const {
-        return m_props.empty();
-    }
+    bool empty() const { return m_props.empty(); }
 
-   private:
+private:
     std::unordered_map<std::string, std::string> m_props;
     static const std::string kEmpty;
 };

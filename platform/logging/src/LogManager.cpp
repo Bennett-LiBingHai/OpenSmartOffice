@@ -38,10 +38,12 @@ spdlog::level::level_enum toSpdlog(LogLevel lv) {
 // 将 file 路径截短为仅保留文件名（避免编译路径泄露）
 const char* shortFile(const char* file) {
     const char* p = file;
-    while (*p)
+    while (*p != 0) {
         ++p;
-    while (p > file && *(p - 1) != '/' && *(p - 1) != '\\')
+    }
+    while (p > file && *(p - 1) != '/' && *(p - 1) != '\\') {
         --p;
+    }
     return p;
 }
 
@@ -50,7 +52,7 @@ const char* shortFile(const char* file) {
 // ---- LogManager::Impl ----
 
 class LogManager::Impl {
-   public:
+public:
     void init(const Config& cfg) {
         if (m_logger) {
             spdlog::drop(kLoggerName);
@@ -107,8 +109,9 @@ class LogManager::Impl {
     }
 
     void log(LogLevel level, const char* file, int line, const std::string& msg) {
-        if (!m_logger)
+        if (!m_logger) {
             return;
+        }
 
         spdlog::source_loc loc{file, line, nullptr};
         auto lv = toSpdlog(level);
@@ -146,13 +149,12 @@ class LogManager::Impl {
     }
 
     void flush() {
-        if (m_logger)
+        if (m_logger) {
             m_logger->flush();
+        }
     }
 
-    bool isInitialized() const {
-        return m_initialized;
-    }
+    [[nodiscard]] bool isInitialized() const { return m_initialized; }
 
     ~Impl() {
         if (m_logger) {
@@ -161,7 +163,7 @@ class LogManager::Impl {
         }
     }
 
-   private:
+private:
     std::shared_ptr<spdlog::logger> m_logger;
     bool m_jsonFormat = false;
     bool m_initialized = false;
@@ -183,9 +185,7 @@ void LogManager::init(const Config& config) {
     m_impl->init(config);
 }
 
-bool LogManager::isInitialized() const {
-    return m_impl && m_impl->isInitialized();
-}
+bool LogManager::isInitialized() const { return m_impl && m_impl->isInitialized(); }
 
 void LogManager::log(LogLevel level, const char* file, int line, const std::string& msg) {
     if (m_impl) {
@@ -194,8 +194,9 @@ void LogManager::log(LogLevel level, const char* file, int line, const std::stri
 }
 
 void LogManager::flush() {
-    if (m_impl)
+    if (m_impl) {
         m_impl->flush();
+    }
 }
 
 }  // namespace oso

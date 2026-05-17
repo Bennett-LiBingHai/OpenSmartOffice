@@ -16,8 +16,7 @@
 #include <string_view>
 #include <unordered_map>
 
-namespace oso {
-namespace OoxmlNamespaces {
+namespace oso::ooxml_namespaces {
 
 // ================================================================
 // 主要标记语言命名空间 — Part 1
@@ -189,7 +188,7 @@ constexpr std::string_view kMarkupCompatibility =
 // 以下仅供参考，实际解析应始终以 SAX2 namespaceUri 为准。
 
 inline const std::unordered_map<std::string_view, std::string_view>& prefixMap() {
-    static const std::unordered_map<std::string_view, std::string_view> map = {
+    static const std::unordered_map<std::string_view, std::string_view> kMap = {
         {"w", kWordprocessingML},
         {"r", kRelationships},
         {"x", kSpreadsheetML},
@@ -206,8 +205,7 @@ inline const std::unordered_map<std::string_view, std::string_view>& prefixMap()
         {"dcmitype", kDublinCoreType},
         {"mc", kMarkupCompatibility},
     };
-    return map;
+    return kMap;
 }
 
-}  // namespace OoxmlNamespaces
-}  // namespace oso
+}  // namespace oso::ooxml_namespaces

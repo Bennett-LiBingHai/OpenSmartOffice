@@ -9,12 +9,14 @@ namespace oso {
 /// IOoxmlWriter 的 libxml2 实现。
 ///
 /// 基于 libxml2 的 xmlTextWriter API 实现 XML 写出。
-/// 命名空间前缀通过 OoxmlNamespaces::prefixMap() 自动查找，
+/// 命名空间前缀通过 ooxml_namespaces::prefixMap() 自动查找，
 /// 各命名空间首次使用时自动生成 xmlns 声明。
 ///
 /// 不可拷贝，可移动。析构函数负责释放 libxml2 资源。
 class Libxml2Writer : public IOoxmlWriter {
-   public:
+public:
+    using IOoxmlWriter::writeStartDocument;
+
     Libxml2Writer();
     ~Libxml2Writer() override;
 
@@ -25,7 +27,7 @@ class Libxml2Writer : public IOoxmlWriter {
 
     void setOutput(IStream& stream) override;
 
-    Result<void> writeStartDocument(bool standalone = true) override;
+    Result<void> writeStartDocument(bool standalone) override;
     Result<void> writeEndDocument() override;
     Result<void> writeStartElement(const std::string& namespaceUri,
                                    const std::string& localName) override;
@@ -37,7 +39,7 @@ class Libxml2Writer : public IOoxmlWriter {
 
     struct Impl;
 
-   private:
+private:
     std::unique_ptr<Impl> m_impl;
 };
 

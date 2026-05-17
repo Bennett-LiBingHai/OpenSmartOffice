@@ -18,18 +18,20 @@ namespace oso {
 /// std::promise/future 追踪完成状态。
 /// 对外只暴露 ITaskExecutor 的纯 C++ 接口。
 class QtTaskExecutor : public ITaskExecutor {
-   public:
-    explicit QtTaskExecutor(int maxThreadCount = std::thread::hardware_concurrency());
+public:
+    using ITaskExecutor::submit;
+
+    explicit QtTaskExecutor(unsigned int maxThreadCount = std::thread::hardware_concurrency());
     ~QtTaskExecutor() override;
 
     QtTaskExecutor(const QtTaskExecutor&) = delete;
     QtTaskExecutor& operator=(const QtTaskExecutor&) = delete;
 
-    void submit(std::function<void()> task, int priority = 0) override;
-    Result<void> waitAll(std::chrono::milliseconds timeout = std::chrono::milliseconds(0)) override;
+    void submit(std::function<void()> task, int priority) override;
+    Result<void> waitAll(int64_t timeout) override;
     size_t pendingCount() const override;
 
-   private:
+private:
     QThreadPool m_pool;
     mutable QMutex m_futuresMutex;
     std::vector<std::future<void>> m_futures;

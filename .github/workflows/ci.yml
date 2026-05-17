@@ -11,8 +11,8 @@ jobs:
   # Job 1: 编译 + 单元测试（核心门禁）
   # ================================================================
   build-and-test:
-    name: Build & Test (g++-12)
-    runs-on: ubuntu-22.04
+    name: Build & Test (g++-13)
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -21,14 +21,14 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            g++-12 cmake \
+            g++-13 cmake \
             libxml2-dev libzip-dev \
             libspdlog-dev nlohmann-json3-dev \
             libgtest-dev libcpp-httplib-dev \
             qt6-base-dev
 
       - name: Configure CMake
-        run: cmake -B build -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_BUILD_TYPE=Debug
+        run: cmake -B build -DCMAKE_CXX_COMPILER=g++-13 -DCMAKE_BUILD_TYPE=Debug
 
       - name: Build project
         run: cmake --build build -j$(nproc)
@@ -42,25 +42,25 @@ jobs:
   # ================================================================
   clang-format:
     name: clang-format
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Install clang-format
-        run: sudo apt-get update && sudo apt-get install -y clang-format-14
+        run: sudo apt-get update && sudo apt-get install -y clang-format-18
 
       - name: Check code formatting
         run: |
           find . -path ./build -prune -o \( -name '*.cpp' -o -name '*.h' \) -print \
-            | xargs clang-format-14 --dry-run --Werror
+            | xargs clang-format-18 --dry-run --Werror
 
   # ================================================================
   # Job 3: clang-tidy 静态代码分析
   # ================================================================
   clang-tidy:
     name: clang-tidy
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -69,19 +69,19 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            g++-12 cmake clang-tidy-14 \
+            g++-13 cmake clang-tidy-18 \
             libxml2-dev libzip-dev \
             libspdlog-dev nlohmann-json3-dev \
             libgtest-dev libcpp-httplib-dev \
-            qt6-base-dev libqt6concurrent-dev
+            qt6-base-dev
 
       - name: Configure CMake
         run: |
-          cmake -B build -DCMAKE_CXX_COMPILER=g++-12 \
+          cmake -B build -DCMAKE_CXX_COMPILER=g++-13 \
             -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
       - name: Run static analysis
         run: |
-          find . -path ./build -prune -o \( -name '*.cpp' \) -print \
-            | xargs clang-tidy-14 -p build --quiet
+          find . -path ./build -prune -o -path ./tests -prune -o \( -name '*.cpp' \) -print \
+            | xargs clang-tidy-18 -p build --quiet

@@ -19,8 +19,9 @@ namespace {
 int writeCallback(void* context, const char* buffer, int len) {
     auto* stream = static_cast<IStream*>(context);
     auto result = stream->write(reinterpret_cast<const uint8_t*>(buffer), static_cast<size_t>(len));
-    if (result.isErr())
+    if (result.isErr()) {
         return -1;
+    }
     return len;
 }
 
@@ -44,7 +45,7 @@ struct Libxml2Writer::Impl {
     std::unordered_set<std::string> declaredNs;
 
     void reset() {
-        if (writer) {
+        if (writer != nullptr) {
             xmlFreeTextWriter(writer);
             writer = nullptr;
         }
@@ -57,29 +58,33 @@ struct Libxml2Writer::Impl {
     }
 
     /// 查找命名空间 URI 对应的标准 OOXML 前缀。
-    std::string findPrefix(const std::string& nsUri) const {
-        if (nsUri.empty())
+    static std::string findPrefix(const std::string& nsUri) {
+        if (nsUri.empty()) {
             return {};
-        const auto& map = OoxmlNamespaces::prefixMap();
+        }
+        const auto& map = ooxml_namespaces::prefixMap();
         for (const auto& [prefix, uri] : map) {
-            if (uri == nsUri)
+            if (uri == nsUri) {
                 return std::string(prefix);
+            }
         }
         return {};
     }
 
     /// 写出 xmlns:prefix="nsUri"，仅在首次遇到时声明。
     Result<void> declareNamespace(const std::string& nsUri, const std::string& prefix) {
-        if (nsUri.empty() || prefix.empty())
+        if (nsUri.empty() || prefix.empty()) {
             return Result<void>::ok();
-        if (declaredNs.count(nsUri))
+        }
+        if (declaredNs.contains(nsUri)) {
             return Result<void>::ok();
+        }
 
         std::string attrName = "xmlns:" + prefix;
         int rc =
             xmlTextWriterWriteAttribute(writer, BAD_CAST attrName.c_str(), BAD_CAST nsUri.c_str());
         if (rc < 0) {
-            return Result<void>::err(ErrorCode::OOXML_XmlParseError,
+            return Result<void>::err(ErrorCode::OOXMLXmlParseError,
                                      "Failed to declare namespace: " + nsUri);
         }
         declaredNs.insert(nsUri);
@@ -91,12 +96,9 @@ struct Libxml2Writer::Impl {
 // 构造/析构/移动
 // ============================================================
 
-Libxml2Writer::Libxml2Writer() : m_impl(std::make_unique<Impl>()) {
-}
+Libxml2Writer::Libxml2Writer() : m_impl(std::make_unique<Impl>()) {}
 
-Libxml2Writer::~Libxml2Writer() {
-    m_impl->reset();
-}
+Libxml2Writer::~Libxml2Writer() { m_impl->reset(); }
 
 Libxml2Writer::Libxml2Writer(Libxml2Writer&&) noexcept = default;
 Libxml2Writer& Libxml2Writer::operator=(Libxml2Writer&&) noexcept = default;
@@ -114,7 +116,7 @@ void Libxml2Writer::setOutput(IStream& stream) {
     );
 
     m_impl->writer = xmlNewTextWriter(m_impl->outBuf);
-    if (m_impl->writer) {
+    if (m_impl->writer != nullptr) {
         xmlTextWriterSetIndent(m_impl->writer, 1);
         xmlTextWriterSetIndentString(m_impl->writer, BAD_CAST "  ");
     }
@@ -125,8 +127,8 @@ void Libxml2Writer::setOutput(IStream& stream) {
 // ============================================================
 
 Result<void> Libxml2Writer::writeStartDocument(bool standalone) {
-    if (!m_impl->writer) {
-        return Result<void>::err(ErrorCode::OOXML_XmlParseError, "Writer not initialized");
+    if (m_impl->writer == nullptr) {
+        return Result<void>::err(ErrorCode::OOXMLXmlParseError, "Writer not initialized");
     }
 
     int rc = xmlTextWriterStartDocument(m_impl->writer,
@@ -135,22 +137,22 @@ Result<void> Libxml2Writer::writeStartDocument(bool standalone) {
 
     if (rc < 0) {
         m_impl->hasError = true;
-        return Result<void>::err(ErrorCode::OOXML_XmlParseError, "Failed to write start document");
+        return Result<void>::err(ErrorCode::OOXMLXmlParseError, "Failed to write start document");
     }
     m_impl->documentStarted = true;
     return Result<void>::ok();
 }
 
 Result<void> Libxml2Writer::writeEndDocument() {
-    if (!m_impl->writer) {
-        return Result<void>::err(ErrorCode::OOXML_XmlParseError, "Writer not initialized");
+    if (m_impl->writer == nullptr) {
+        return Result<void>::err(ErrorCode::OOXMLXmlParseError, "Writer not initialized");
     }
 
     int rc = xmlTextWriterEndDocument(m_impl->writer);
     m_impl->documentStarted = false;
     if (rc < 0) {
         m_impl->hasError = true;
-        return Result<void>::err(ErrorCode::OOXML_XmlParseError, "Failed to write end document");
+        return Result<void>::err(ErrorCode::OOXMLXmlParseError, "Failed to write end document");
     }
     return Result<void>::ok();
 }
@@ -161,11 +163,11 @@ Result<void> Libxml2Writer::writeEndDocument() {
 
 Result<void> Libxml2Writer::writeStartElement(const std::string& namespaceUri,
                                               const std::string& localName) {
-    if (!m_impl->writer) {
-        return Result<void>::err(ErrorCode::OOXML_XmlParseError, "Writer not initialized");
+    if (m_impl->writer == nullptr) {
+        return Result<void>::err(ErrorCode::OOXMLXmlParseError, "Writer not initialized");
     }
     if (!m_impl->documentStarted) {
-        return Result<void>::err(ErrorCode::OOXML_XmlParseError,
+        return Result<void>::err(ErrorCode::OOXMLXmlParseError,
                                  "writeStartDocument() must be called before writeStartElement()");
     }
 
@@ -175,27 +177,28 @@ Result<void> Libxml2Writer::writeStartElement(const std::string& namespaceUri,
     int rc = xmlTextWriterStartElement(m_impl->writer, BAD_CAST qName.c_str());
     if (rc < 0) {
         m_impl->hasError = true;
-        return Result<void>::err(ErrorCode::OOXML_XmlParseError,
+        return Result<void>::err(ErrorCode::OOXMLXmlParseError,
                                  "Failed to write start element: " + localName);
     }
 
     // 首次遇到此 namespace URI 时，在当前元素上写出 xmlns:prefix="..."
     auto declareResult = m_impl->declareNamespace(namespaceUri, prefix);
-    if (declareResult.isErr())
+    if (declareResult.isErr()) {
         return declareResult;
+    }
 
     return Result<void>::ok();
 }
 
 Result<void> Libxml2Writer::writeEndElement() {
-    if (!m_impl->writer) {
-        return Result<void>::err(ErrorCode::OOXML_XmlParseError, "Writer not initialized");
+    if (m_impl->writer == nullptr) {
+        return Result<void>::err(ErrorCode::OOXMLXmlParseError, "Writer not initialized");
     }
 
     int rc = xmlTextWriterEndElement(m_impl->writer);
     if (rc < 0) {
         m_impl->hasError = true;
-        return Result<void>::err(ErrorCode::OOXML_XmlParseError, "Failed to write end element");
+        return Result<void>::err(ErrorCode::OOXMLXmlParseError, "Failed to write end element");
     }
     return Result<void>::ok();
 }
@@ -206,8 +209,8 @@ Result<void> Libxml2Writer::writeEndElement() {
 
 Result<void> Libxml2Writer::writeAttribute(const std::string& namespaceUri,
                                            const std::string& localName, const std::string& value) {
-    if (!m_impl->writer) {
-        return Result<void>::err(ErrorCode::OOXML_XmlParseError, "Writer not initialized");
+    if (m_impl->writer == nullptr) {
+        return Result<void>::err(ErrorCode::OOXMLXmlParseError, "Writer not initialized");
     }
 
     int rc = 0;
@@ -218,8 +221,9 @@ Result<void> Libxml2Writer::writeAttribute(const std::string& namespaceUri,
         std::string prefix = m_impl->findPrefix(namespaceUri);
         // 确保属性的命名空间已声明
         auto declareResult = m_impl->declareNamespace(namespaceUri, prefix);
-        if (declareResult.isErr())
+        if (declareResult.isErr()) {
             return declareResult;
+        }
 
         std::string qName = prefix + ":" + localName;
         rc = xmlTextWriterWriteAttribute(m_impl->writer, BAD_CAST qName.c_str(),
@@ -228,7 +232,7 @@ Result<void> Libxml2Writer::writeAttribute(const std::string& namespaceUri,
 
     if (rc < 0) {
         m_impl->hasError = true;
-        return Result<void>::err(ErrorCode::OOXML_XmlParseError,
+        return Result<void>::err(ErrorCode::OOXMLXmlParseError,
                                  "Failed to write attribute: " + localName);
     }
     return Result<void>::ok();
@@ -239,11 +243,12 @@ Result<void> Libxml2Writer::writeAttribute(const std::string& namespaceUri,
 // ============================================================
 
 Result<void> Libxml2Writer::declareNamespace(const std::string& namespaceUri) {
-    if (!m_impl->writer) {
-        return Result<void>::err(ErrorCode::OOXML_XmlParseError, "Writer not initialized");
+    if (m_impl->writer == nullptr) {
+        return Result<void>::err(ErrorCode::OOXMLXmlParseError, "Writer not initialized");
     }
-    if (namespaceUri.empty())
+    if (namespaceUri.empty()) {
         return Result<void>::ok();
+    }
 
     std::string prefix = m_impl->findPrefix(namespaceUri);
     return m_impl->declareNamespace(namespaceUri, prefix);
@@ -254,11 +259,11 @@ Result<void> Libxml2Writer::declareNamespace(const std::string& namespaceUri) {
 // ============================================================
 
 Result<void> Libxml2Writer::writeText(const std::string& text) {
-    if (!m_impl->writer) {
-        return Result<void>::err(ErrorCode::OOXML_XmlParseError, "Writer not initialized");
+    if (m_impl->writer == nullptr) {
+        return Result<void>::err(ErrorCode::OOXMLXmlParseError, "Writer not initialized");
     }
     if (!m_impl->documentStarted) {
-        return Result<void>::err(ErrorCode::OOXML_XmlParseError,
+        return Result<void>::err(ErrorCode::OOXMLXmlParseError,
                                  "writeStartDocument() must be called before writeText()");
     }
 
@@ -267,7 +272,7 @@ Result<void> Libxml2Writer::writeText(const std::string& text) {
 
     if (rc < 0) {
         m_impl->hasError = true;
-        return Result<void>::err(ErrorCode::OOXML_XmlParseError, "Failed to write text");
+        return Result<void>::err(ErrorCode::OOXMLXmlParseError, "Failed to write text");
     }
     return Result<void>::ok();
 }

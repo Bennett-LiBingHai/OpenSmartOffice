@@ -53,7 +53,7 @@ Result<std::string> DocumentFacade::detectDocumentType(IZipArchive& archive) {
         return Result<std::string>::ok("slide");
     }
 
-    return Result<std::string>::err(ErrorCode::OOXML_InvalidSchema,
+    return Result<std::string>::err(ErrorCode::OOXMLInvalidSchema,
                                     "Unable to detect document type");
 }
 
@@ -81,7 +81,7 @@ Result<std::unique_ptr<DomNode>> DocumentFacade::openDocument(const std::string&
         return loadWordDocument(archive);
     }
 
-    return Result<std::unique_ptr<DomNode>>::err(ErrorCode::OOXML_InvalidSchema,
+    return Result<std::unique_ptr<DomNode>>::err(ErrorCode::OOXMLInvalidSchema,
                                                  "Unsupported document type: " + docType);
 }
 
@@ -103,9 +103,9 @@ Result<std::unique_ptr<DomNode>> DocumentFacade::loadWordDocument(IZipArchive& a
     }
 
     auto& rels = relsParseResult.value();
-    auto docRelations = rels.getAllByType(OoxmlNamespaces::kRelOfficeDocument);
+    auto docRelations = rels.getAllByType(ooxml_namespaces::kRelOfficeDocument);
     if (docRelations.empty()) {
-        return Result<std::unique_ptr<DomNode>>::err(ErrorCode::OOXML_MissingPart,
+        return Result<std::unique_ptr<DomNode>>::err(ErrorCode::OOXMLMissingPart,
                                                      "No officeDocument relationship found");
     }
 
@@ -136,12 +136,12 @@ Result<std::unique_ptr<DomNode>> DocumentFacade::loadWordDocument(IZipArchive& a
 // ============================================================
 
 Result<void> DocumentFacade::saveDocument(const DomNode& doc, const std::string& path) {
-    auto* docNode = dynamic_cast<const DomDocument*>(&doc);
-    if (!docNode) {
+    const auto* docNode = dynamic_cast<const DomDocument*>(&doc);
+    if (docNode == nullptr) {
         // 包装一层：如果不是 DomDocument，也得保存
     }
 
-    const auto& docType = dynamic_cast<const DomDocument*>(&doc)
+    const auto& docType = dynamic_cast<const DomDocument*>(&doc) != nullptr
                               ? dynamic_cast<const DomDocument*>(&doc)->documentType()
                               : "word";
 
@@ -149,7 +149,7 @@ Result<void> DocumentFacade::saveDocument(const DomNode& doc, const std::string&
         return saveWordDocument(doc, path);
     }
 
-    return Result<void>::err(ErrorCode::OOXML_InvalidSchema,
+    return Result<void>::err(ErrorCode::OOXMLInvalidSchema,
                              "Unsupported document type: " + docType);
 }
 
@@ -164,8 +164,8 @@ Result<void> DocumentFacade::saveWordDocument(const DomNode& doc, const std::str
     writer.setOutput(docStream);
 
     // 跳过 DomDocument 的 XML 声明（WordDocument::serialize 会自己写）
-    auto* wdDoc = dynamic_cast<const WordDocument*>(&doc);
-    if (wdDoc) {
+    const auto* wdDoc = dynamic_cast<const WordDocument*>(&doc);
+    if (wdDoc != nullptr) {
         wdDoc->serialize(writer);
     } else {
         doc.serialize(writer);
@@ -181,24 +181,27 @@ Result<void> DocumentFacade::saveWordDocument(const DomNode& doc, const std::str
     // 2a. 首先写 [Content_Types].xml
     auto ctXml = ContentTypeRegistry::generate({"word/document.xml"});
     auto ctWriteResult = archive.writeEntry("[Content_Types].xml", ctXml);
-    if (ctWriteResult.isErr())
+    if (ctWriteResult.isErr()) {
         return ctWriteResult;
+    }
 
     // std::vector<>
 
     // 2b. 写 _rels/.rels
     auto relsXml = RelationshipMap::generate({
-        oso::RelationshipMap::Relationship("rId1", std::string(OoxmlNamespaces::kRelOfficeDocument),
-                                           "word/document.xml", false),
+        oso::RelationshipMap::Relationship(
+            "rId1", std::string(ooxml_namespaces::kRelOfficeDocument), "word/document.xml", false),
     });
     auto relsWriteResult = archive.writeEntry("_rels/.rels", relsXml);
-    if (relsWriteResult.isErr())
+    if (relsWriteResult.isErr()) {
         return relsWriteResult;
+    }
 
     // 2c. 最后写 word/document.xml
     auto docWriteResult = archive.writeEntry("word/document.xml", docStream.data());
-    if (docWriteResult.isErr())
+    if (docWriteResult.isErr()) {
         return docWriteResult;
+    }
 
     return archive.close();
 }

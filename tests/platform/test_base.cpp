@@ -22,33 +22,33 @@ TEST(ErrorCode, OkIsNotErr) {
 
 TEST(ErrorCode, LayerEncoding) {
     // Platform (0x0000_0000 ~ 0x0FFF_FFFF)
-    EXPECT_EQ(ErrorCode(ErrorCode::IO_FileNotFound).raw() >> 28, 0x0);
+    EXPECT_EQ(ErrorCode(ErrorCode::IOFileNotFound).raw() >> 28, 0x0);
     // Infra (0x1000_0000 ~ 0x1FFF_FFFF)
-    EXPECT_EQ(ErrorCode(ErrorCode::OOXML_ZipCorrupted).raw() >> 28, 0x1);
+    EXPECT_EQ(ErrorCode(ErrorCode::OOXMLZipCorrupted).raw() >> 28, 0x1);
     // Core (0x2000_0000 ~ 0x2FFF_FFFF)
-    EXPECT_EQ(ErrorCode(ErrorCode::DOM_InvalidNodeType).raw() >> 28, 0x2);
+    EXPECT_EQ(ErrorCode(ErrorCode::DOMInvalidNodeType).raw() >> 28, 0x2);
 }
 
 TEST(ErrorCode, SubModuleEncoding) {
     // Sub-module occupies 4 bits within the upper 16 bits, at [19:16]
-    uint32_t raw = ErrorCode(ErrorCode::OOXML_XmlParseError).raw();
+    uint32_t raw = ErrorCode(ErrorCode::OOXMLXmlParseError).raw();
     uint32_t subModule = (raw >> 16) & 0xF;
     EXPECT_EQ(subModule, 0x1);  // OOXML = 0x1 within Infra
 
-    raw = ErrorCode(ErrorCode::Formula_SyntaxError).raw();
+    raw = ErrorCode(ErrorCode::FormulaSyntaxError).raw();
     subModule = (raw >> 16) & 0xF;
     EXPECT_EQ(subModule, 0x2);  // Formula = 0x2 within Infra
 }
 
 TEST(ErrorCode, ToString) {
     EXPECT_EQ(ErrorCode(ErrorCode::Ok).toString(), "Ok");
-    EXPECT_EQ(ErrorCode(ErrorCode::IO_FileNotFound).toString(), "IO_FileNotFound");
-    EXPECT_EQ(ErrorCode(ErrorCode::OOXML_ZipCorrupted).toString(), "OOXML_ZipCorrupted");
+    EXPECT_EQ(ErrorCode(ErrorCode::IOFileNotFound).toString(), "IOFileNotFound");
+    EXPECT_EQ(ErrorCode(ErrorCode::OOXMLZipCorrupted).toString(), "OOXMLZipCorrupted");
 }
 
 TEST(ErrorCode, Equality) {
-    EXPECT_EQ(ErrorCode(ErrorCode::DOM_InvalidNodeType), ErrorCode(ErrorCode::DOM_InvalidNodeType));
-    EXPECT_NE(ErrorCode(ErrorCode::Ok), ErrorCode(ErrorCode::IO_ReadError));
+    EXPECT_EQ(ErrorCode(ErrorCode::DOMInvalidNodeType), ErrorCode(ErrorCode::DOMInvalidNodeType));
+    EXPECT_NE(ErrorCode(ErrorCode::Ok), ErrorCode(ErrorCode::IOReadError));
 }
 
 TEST(ErrorCode, UnknownFallsThrough) {
@@ -68,10 +68,10 @@ TEST(Result, OkInt) {
 }
 
 TEST(Result, ErrInt) {
-    auto r = Result<int>::err(ErrorCode::IO_ReadError, "cannot read");
+    auto r = Result<int>::err(ErrorCode::IOReadError, "cannot read");
     EXPECT_FALSE(r.isOk());
     EXPECT_TRUE(r.isErr());
-    EXPECT_EQ(r.error(), ErrorCode::IO_ReadError);
+    EXPECT_EQ(r.error(), ErrorCode::IOReadError);
     EXPECT_EQ(r.message(), "cannot read");
 }
 
@@ -88,14 +88,13 @@ TEST(Result, VoidOk) {
 }
 
 TEST(Result, VoidErr) {
-    auto r = Result<void>::err(ErrorCode::Concurrent_Shutdown);
+    auto r = Result<void>::err(ErrorCode::ConcurrentShutdown);
     EXPECT_TRUE(r.isErr());
-    EXPECT_EQ(r.error(), ErrorCode::Concurrent_Shutdown);
+    EXPECT_EQ(r.error(), ErrorCode::ConcurrentShutdown);
 }
 
 static Result<int> divide(int a, int b) {
-    if (b == 0)
-        return Result<int>::err(ErrorCode::DOM_InvalidOperation, "div by zero");
+    if (b == 0) return Result<int>::err(ErrorCode::DOMInvalidOperation, "div by zero");
     return Result<int>::ok(a / b);
 }
 
@@ -107,7 +106,7 @@ TEST(OSOTry, PropagatesError) {
     };
     auto r = fn(0);
     EXPECT_TRUE(r.isErr());
-    EXPECT_EQ(r.error(), ErrorCode::DOM_InvalidOperation);
+    EXPECT_EQ(r.error(), ErrorCode::DOMInvalidOperation);
     EXPECT_EQ(r.message(), "div by zero");
 }
 
@@ -183,25 +182,25 @@ TEST(Color, ToHexStringWithAlpha) {
 }
 
 TEST(Color, PredefinedColors) {
-    EXPECT_EQ(Colors::Black, Color::fromRgb(0, 0, 0));
-    EXPECT_EQ(Colors::White, Color::fromRgb(255, 255, 255));
-    EXPECT_EQ(Colors::Red, Color::fromRgb(255, 0, 0));
-    EXPECT_EQ(Colors::Transparent, Color::fromArgb(0, 0, 0, 0));
+    EXPECT_EQ(colors::kBlack, Color::fromRgb(0, 0, 0));
+    EXPECT_EQ(colors::kWhite, Color::fromRgb(255, 255, 255));
+    EXPECT_EQ(colors::kRed, Color::fromRgb(255, 0, 0));
+    EXPECT_EQ(colors::kTransparent, Color::fromArgb(0, 0, 0, 0));
 }
 
 TEST(Color, ThemeDark1) {
     auto c = Color::fromTheme(Color::ThemeColor::Dark1);
-    EXPECT_EQ(c, Colors::Black);
+    EXPECT_EQ(c, colors::kBlack);
 }
 
 TEST(Color, ThemeLight1) {
     auto c = Color::fromTheme(Color::ThemeColor::Light1);
-    EXPECT_EQ(c, Colors::White);
+    EXPECT_EQ(c, colors::kWhite);
 }
 
 TEST(Color, ThemeHyperlink) {
     auto c = Color::fromTheme(Color::ThemeColor::Hyperlink);
-    EXPECT_NE(c, Colors::Black);  // should be a distinct hyperlink color
+    EXPECT_NE(c, colors::kBlack);  // should be a distinct hyperlink color
 }
 
 TEST(Color, ThemeWithTint) {
@@ -231,16 +230,16 @@ TEST(Color, ThemeAllColorsHaveValues) {
 }
 
 TEST(Color, IndexedSystemColors) {
-    EXPECT_EQ(Color::fromIndexed(0), Colors::Black);
-    EXPECT_EQ(Color::fromIndexed(1), Colors::White);
-    EXPECT_EQ(Color::fromIndexed(2), Colors::Red);
-    EXPECT_EQ(Color::fromIndexed(3), Colors::Green);
-    EXPECT_EQ(Color::fromIndexed(4), Colors::Blue);
+    EXPECT_EQ(Color::fromIndexed(0), colors::kBlack);
+    EXPECT_EQ(Color::fromIndexed(1), colors::kWhite);
+    EXPECT_EQ(Color::fromIndexed(2), colors::kRed);
+    EXPECT_EQ(Color::fromIndexed(3), colors::kGreen);
+    EXPECT_EQ(Color::fromIndexed(4), colors::kBlue);
 }
 
 TEST(Color, IndexedBeyondTableReturnsBlack) {
     auto c = Color::fromIndexed(255);
-    EXPECT_EQ(c, Colors::Black);
+    EXPECT_EQ(c, colors::kBlack);
 }
 
 TEST(Color, IndexedAllIndicesValid) {
@@ -391,13 +390,13 @@ TEST(Length, CompoundAssignment) {
 }
 
 TEST(Length, A4Dimensions) {
-    EXPECT_NEAR(Lengths::A4Width.toMm(), 210.0, 0.01);
-    EXPECT_NEAR(Lengths::A4Height.toMm(), 297.0, 0.01);
+    EXPECT_NEAR(lengths::kA4Width.toMm(), 210.0, 0.01);
+    EXPECT_NEAR(lengths::kA4Height.toMm(), 297.0, 0.01);
 }
 
 TEST(Length, LetterDimensions) {
-    EXPECT_NEAR(Lengths::LetterWidth.toInch(), 8.5, 0.001);
-    EXPECT_NEAR(Lengths::LetterHeight.toInch(), 11.0, 0.001);
+    EXPECT_NEAR(lengths::kLetterWidth.toInch(), 8.5, 0.001);
+    EXPECT_NEAR(lengths::kLetterHeight.toInch(), 11.0, 0.001);
 }
 
 // ============================================================
@@ -485,9 +484,7 @@ TEST(RelationshipId, Comparison) {
     EXPECT_EQ(RelationshipId::fromIndex(4), RelationshipId::fromString("rId4"));
 }
 
-TEST(RelationshipId, FromIndexRejectsZero) {
-    EXPECT_TRUE(RelationshipId::fromIndex(0).empty());
-}
+TEST(RelationshipId, FromIndexRejectsZero) { EXPECT_TRUE(RelationshipId::fromIndex(0).empty()); }
 
 TEST(RelationshipId, FromIndexRejectsNegative) {
     EXPECT_TRUE(RelationshipId::fromIndex(-1).empty());

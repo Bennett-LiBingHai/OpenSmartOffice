@@ -30,11 +30,9 @@ namespace {
 struct TempFile {
     std::string path;
     bool isRemain;
-    explicit TempFile(std::string p, bool ir = false) : path(std::move(p)), isRemain(ir) {
-    }
+    explicit TempFile(std::string p, bool ir = false) : path(std::move(p)), isRemain(ir) {}
     ~TempFile() {
-        if (!isRemain)
-            std::remove(path.c_str());
+        if (!isRemain) std::remove(path.c_str());
     }
 };
 
@@ -275,7 +273,7 @@ TEST(Serialize, DocWithTextRoundTrip) {
 TEST(ElementFactory, RegisteredElements) {
     auto& factory = ElementFactory::instance();
 
-    const auto& wns = OoxmlNamespaces::kWordprocessingML;
+    const auto& wns = ooxml_namespaces::kWordprocessingML;
     std::string wnsStr(wns);
 
     EXPECT_TRUE(factory.isRegistered(wnsStr, "document"));
@@ -303,7 +301,7 @@ TEST(ElementFactory, UnregisteredFallsBackToDomElement) {
 TEST(ElementFactory, CreateWordDocument) {
     auto& factory = ElementFactory::instance();
 
-    const auto& wns = OoxmlNamespaces::kWordprocessingML;
+    const auto& wns = ooxml_namespaces::kWordprocessingML;
     auto node = factory.create(std::string(wns), "document");
     ASSERT_NE(node, nullptr);
 
@@ -462,7 +460,7 @@ TEST(ElementFactory, DifferentNamespaceSameLocalName) {
     auto& factory = ElementFactory::instance();
 
     // "document" 在 WordprocessingML 命名空间下 → WordDocument
-    const auto& wns = OoxmlNamespaces::kWordprocessingML;
+    const auto& wns = ooxml_namespaces::kWordprocessingML;
     auto wordNode = factory.create(std::string(wns), "document");
     ASSERT_NE(wordNode, nullptr);
     EXPECT_NE(dynamic_cast<WordDocument*>(wordNode.get()), nullptr);
@@ -477,7 +475,7 @@ TEST(ElementFactory, DifferentNamespaceSameLocalName) {
 TEST(ElementFactory, IsRegisteredDifferentNamespace) {
     auto& factory = ElementFactory::instance();
 
-    const auto& wns = OoxmlNamespaces::kWordprocessingML;
+    const auto& wns = ooxml_namespaces::kWordprocessingML;
     std::string wnsStr(wns);
 
     EXPECT_TRUE(factory.isRegistered(wnsStr, "p"));
@@ -709,12 +707,9 @@ TEST(IntegrationTest, GeneratedDocxHasCorrectZipStructure) {
     bool hasDocument = false;
 
     for (const auto& e : list) {
-        if (e.name == "[Content_Types].xml")
-            hasContentTypes = true;
-        if (e.name == "_rels/.rels")
-            hasRels = true;
-        if (e.name == "word/document.xml")
-            hasDocument = true;
+        if (e.name == "[Content_Types].xml") hasContentTypes = true;
+        if (e.name == "_rels/.rels") hasRels = true;
+        if (e.name == "word/document.xml") hasDocument = true;
     }
 
     EXPECT_TRUE(hasContentTypes) << "缺少 [Content_Types].xml";

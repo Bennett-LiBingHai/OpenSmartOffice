@@ -11,7 +11,7 @@ namespace oso {
 
 // Zip 档案读写抽象接口
 class IZipArchive {
-   public:
+public:
     // 描述压缩包内单个文件或目录的元数据
     struct Entry {
         std::string name;  // 部件路径，如 "word/document.xml"
@@ -35,7 +35,7 @@ class IZipArchive {
      *
      * @return 成功返回条目数组；失败返回错误码（如档案未打开）
      */
-    virtual Result<std::vector<Entry>> entries() const = 0;
+    [[nodiscard]] virtual Result<std::vector<Entry>> entries() const = 0;
 
     /**
      * @brief 读取指定条目内容
@@ -76,7 +76,7 @@ class IZipArchive {
      *
      * @return 已打开返回 true，否则返回 false
      */
-    virtual bool isOpen() const = 0;
+    [[nodiscard]] virtual bool isOpen() const = 0;
 };
 
 }  // namespace oso

@@ -126,7 +126,7 @@ TEST(Libxml2Writer, WriteNamespacedDocument) {
     Libxml2Writer writer;
     writer.setOutput(stream);
 
-    const auto& ns = OoxmlNamespaces::kWordprocessingML;
+    const auto& ns = ooxml_namespaces::kWordprocessingML;
     ASSERT_TRUE(writer.writeStartDocument().isOk());
     ASSERT_TRUE(writer.writeStartElement(std::string(ns), "document").isOk());
     ASSERT_TRUE(writer.writeStartElement(std::string(ns), "body").isOk());
@@ -157,7 +157,7 @@ TEST(Libxml2Writer, WriteAttributes) {
     Libxml2Writer writer;
     writer.setOutput(stream);
 
-    const auto& ns = OoxmlNamespaces::kWordprocessingML;
+    const auto& ns = ooxml_namespaces::kWordprocessingML;
     ASSERT_TRUE(writer.writeStartDocument().isOk());
     ASSERT_TRUE(writer.writeStartElement(std::string(ns), "p").isOk());
     ASSERT_TRUE(writer.writeAttribute(std::string(ns), "rsidR", "00AB1234").isOk());
@@ -173,8 +173,7 @@ TEST(Libxml2Writer, WriteAttributes) {
         stream.data(),
         [&](const std::string&, const std::string& localName, const std::string&,
             const std::vector<XmlAttribute>& attrs) {
-            if (localName == "p")
-                capturedAttrs = attrs;
+            if (localName == "p") capturedAttrs = attrs;
         },
         nullptr, nullptr);
 
@@ -249,8 +248,7 @@ TEST(Libxml2Writer, WriteNestedElements) {
     EXPECT_EQ(result.startElements[1], "b");
     EXPECT_EQ(result.startElements[2], "c");
     ASSERT_GE(result.texts.size(), 1u);
-    for (int i = 0; i < result.texts.size(); ++i)
-        std::cout << result.texts[i] << std::endl;
+    for (int i = 0; i < result.texts.size(); ++i) std::cout << result.texts[i] << std::endl;
     EXPECT_EQ(result.texts[0], "deep");
 }
 
@@ -263,7 +261,7 @@ TEST(Libxml2Writer, WriteSpreadsheetML) {
     Libxml2Writer writer;
     writer.setOutput(stream);
 
-    const auto& ns = OoxmlNamespaces::kSpreadsheetML;
+    const auto& ns = ooxml_namespaces::kSpreadsheetML;
     ASSERT_TRUE(writer.writeStartDocument().isOk());
     ASSERT_TRUE(writer.writeStartElement(std::string(ns), "worksheet").isOk());
     ASSERT_TRUE(writer.writeStartElement(std::string(ns), "sheetData").isOk());
@@ -288,7 +286,7 @@ TEST(Libxml2Writer, WritePresentationML) {
     Libxml2Writer writer;
     writer.setOutput(stream);
 
-    const auto& ns = OoxmlNamespaces::kPresentationML;
+    const auto& ns = ooxml_namespaces::kPresentationML;
     ASSERT_TRUE(writer.writeStartDocument().isOk());
     ASSERT_TRUE(writer.writeStartElement(std::string(ns), "presentation").isOk());
     ASSERT_TRUE(writer.writeStartElement(std::string(ns), "sldIdLst").isOk());
@@ -314,8 +312,8 @@ TEST(Libxml2Writer, WriteMultipleNamespaces) {
     Libxml2Writer writer;
     writer.setOutput(stream);
 
-    const auto& wns = OoxmlNamespaces::kWordprocessingML;
-    const auto& rns = OoxmlNamespaces::kRelationships;
+    const auto& wns = ooxml_namespaces::kWordprocessingML;
+    const auto& rns = ooxml_namespaces::kRelationships;
 
     ASSERT_TRUE(writer.writeStartDocument().isOk());
     ASSERT_TRUE(writer.writeStartElement(std::string(wns), "document").isOk());
@@ -361,8 +359,7 @@ TEST(Libxml2Writer, WriteAttributeNoNamespace) {
         stream.data(),
         [&](const std::string&, const std::string& localName, const std::string&,
             const std::vector<XmlAttribute>& attrs) {
-            if (localName == "root")
-                capturedAttrs = attrs;
+            if (localName == "root") capturedAttrs = attrs;
         },
         nullptr, nullptr);
 
@@ -421,5 +418,5 @@ TEST(Libxml2Writer, WriteWithoutOutput) {
     Libxml2Writer writer;
     auto result = writer.writeStartDocument();
     EXPECT_TRUE(result.isErr());
-    EXPECT_EQ(result.error(), ErrorCode::OOXML_XmlParseError);
+    EXPECT_EQ(result.error(), ErrorCode::OOXMLXmlParseError);
 }

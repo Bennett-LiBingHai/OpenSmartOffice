@@ -21,11 +21,9 @@ namespace {
 struct TempFile {
     std::string path;
     bool isRemain;
-    explicit TempFile(std::string p, bool ir = false) : path(std::move(p)), isRemain(ir) {
-    }
+    explicit TempFile(std::string p, bool ir = false) : path(std::move(p)), isRemain(ir) {}
     ~TempFile() {
-        if (!isRemain)
-            std::remove(path.c_str());
+        if (!isRemain) std::remove(path.c_str());
     }
 };
 
@@ -43,7 +41,7 @@ TEST(DocumentFacade, OpenNonExistentFile) {
     DocumentFacade facade;
     auto result = facade.openDocument("/nonexistent/path/file.docx");
     EXPECT_TRUE(result.isErr());
-    EXPECT_EQ(result.error(), ErrorCode::IO_FileNotFound);
+    EXPECT_EQ(result.error(), ErrorCode::IOFileNotFound);
 }
 
 TEST(DocumentFacade, OpenFileThatIsNotAZip) {
@@ -175,12 +173,9 @@ TEST(DocumentFacade, RoundTripPreservesZipStructure) {
     // 必须有这三个部件
     bool hasContentTypes = false, hasRels = false, hasDocument = false;
     for (const auto& e : list) {
-        if (e.name == "[Content_Types].xml")
-            hasContentTypes = true;
-        if (e.name == "_rels/.rels")
-            hasRels = true;
-        if (e.name == "word/document.xml")
-            hasDocument = true;
+        if (e.name == "[Content_Types].xml") hasContentTypes = true;
+        if (e.name == "_rels/.rels") hasRels = true;
+        if (e.name == "word/document.xml") hasDocument = true;
     }
 
     EXPECT_TRUE(hasContentTypes);

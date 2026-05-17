@@ -3,6 +3,8 @@
 #include "oso/ooxml/common/OoxmlNamespaces.h"
 #include "oso/ooxml/write/IOoxmlWriter.h"
 
+#include <ranges>
+
 namespace oso {
 
 // ============================================================
@@ -11,7 +13,7 @@ namespace oso {
 
 WordDocument::WordDocument() : DomDocument("word") {
     m_localName = "document";
-    m_namespaceUri = std::string(OoxmlNamespaces::kWordprocessingML);
+    m_namespaceUri = std::string(ooxml_namespaces::kWordprocessingML);
 }
 
 Body* WordDocument::body() const {
@@ -25,7 +27,7 @@ Body* WordDocument::body() const {
 
 void WordDocument::setBody(std::unique_ptr<Body> body) {
     for (auto& c : m_children) {
-        if (dynamic_cast<Body*>(c.get())) {
+        if (dynamic_cast<Body*>(c.get()) != nullptr) {
             c = std::move(body);
             return;
         }
@@ -47,12 +49,9 @@ void WordDocument::serialize(IOoxmlWriter& writer) const {
 // Body 实现
 // ============================================================
 
-Body::Body() : DomElement("body", std::string(OoxmlNamespaces::kWordprocessingML)) {
-}
+Body::Body() : DomElement("body", std::string(ooxml_namespaces::kWordprocessingML)) {}
 
-void Body::addParagraph(std::unique_ptr<Paragraph> para) {
-    appendChild(std::move(para));
-}
+void Body::addParagraph(std::unique_ptr<Paragraph> para) { appendChild(std::move(para)); }
 
 std::vector<Paragraph*> Body::paragraphs() const {
     std::vector<Paragraph*> result;
@@ -65,28 +64,23 @@ std::vector<Paragraph*> Body::paragraphs() const {
 }
 
 Paragraph* Body::lastParagraph() const {
-    for (auto it = m_children.rbegin(); it != m_children.rend(); ++it) {
-        if ((*it)->localName() == "p") {
-            return static_cast<Paragraph*>((*it).get());
+    for (const auto& it : std::ranges::reverse_view(m_children)) {
+        if (it->localName() == "p") {
+            return static_cast<Paragraph*>(it.get());
         }
     }
     return nullptr;
 }
 
-void Body::serialize(IOoxmlWriter& writer) const {
-    DomElement::serialize(writer);
-}
+void Body::serialize(IOoxmlWriter& writer) const { DomElement::serialize(writer); }
 
 // ============================================================
 // Paragraph 实现
 // ============================================================
 
-Paragraph::Paragraph() : DomElement("p", std::string(OoxmlNamespaces::kWordprocessingML)) {
-}
+Paragraph::Paragraph() : DomElement("p", std::string(ooxml_namespaces::kWordprocessingML)) {}
 
-void Paragraph::addRun(std::unique_ptr<Run> run) {
-    appendChild(std::move(run));
-}
+void Paragraph::addRun(std::unique_ptr<Run> run) { appendChild(std::move(run)); }
 
 std::vector<Run*> Paragraph::runs() const {
     std::vector<Run*> result;
@@ -99,33 +93,28 @@ std::vector<Run*> Paragraph::runs() const {
 }
 
 Run* Paragraph::lastRun() const {
-    for (auto it = m_children.rbegin(); it != m_children.rend(); ++it) {
-        if ((*it)->localName() == "r") {
-            return static_cast<Run*>((*it).get());
+    for (const auto& it : std::ranges::reverse_view(m_children)) {
+        if (it->localName() == "r") {
+            return static_cast<Run*>(it.get());
         }
     }
     return nullptr;
 }
 
-void Paragraph::serialize(IOoxmlWriter& writer) const {
-    DomElement::serialize(writer);
-}
+void Paragraph::serialize(IOoxmlWriter& writer) const { DomElement::serialize(writer); }
 
 // ============================================================
 // Run 实现
 // ============================================================
 
-Run::Run() : DomElement("r", std::string(OoxmlNamespaces::kWordprocessingML)) {
-}
+Run::Run() : DomElement("r", std::string(ooxml_namespaces::kWordprocessingML)) {}
 
-void Run::addText(std::unique_ptr<Text> text) {
-    appendChild(std::move(text));
-}
+void Run::addText(std::unique_ptr<Text> text) { appendChild(std::move(text)); }
 
 std::string Run::textContent() const {
     std::string result;
     for (const auto& child : m_children) {
-        if (auto* textNode = dynamic_cast<const Text*>(child.get())) {
+        if (const auto* textNode = dynamic_cast<const Text*>(child.get())) {
             result += textNode->content()->text();
         }
     }
@@ -142,15 +131,13 @@ std::vector<Text*> Run::texts() const {
     return result;
 }
 
-void Run::serialize(IOoxmlWriter& writer) const {
-    DomElement::serialize(writer);
-}
+void Run::serialize(IOoxmlWriter& writer) const { DomElement::serialize(writer); }
 
 // ============================================================
 // Text 实现
 // ============================================================
 
-Text::Text() : DomElement("t", std::string(OoxmlNamespaces::kWordprocessingML)) {
+Text::Text() : DomElement("t", std::string(ooxml_namespaces::kWordprocessingML)) {
     appendChild(std::make_unique<DomText>());
 }
 
@@ -165,7 +152,7 @@ DomText* Text::content() const {
 
 void Text::setContent(std::unique_ptr<class DomText> content) {
     const std::string& s = content->text();
-    if (!s.empty() && (isspace(s.front()) || isspace(s.back()))) {
+    if (!s.empty() && (isspace(s.front()) != 0 || isspace(s.back()) != 0)) {
         m_attributes["xml:space"] = "preserve";
     } else {
         m_attributes.erase("xml:space");
@@ -179,15 +166,12 @@ void Text::setContent(std::unique_ptr<class DomText> content) {
     appendChild(std::move(content));
 }
 
-void Text::serialize(IOoxmlWriter& writer) const {
-    DomElement::serialize(writer);
-}
+void Text::serialize(IOoxmlWriter& writer) const { DomElement::serialize(writer); }
 
 // ============================================================
 // Section 实现
 // ============================================================
 
-Section::Section() : DomElement("sectPr", std::string(OoxmlNamespaces::kWordprocessingML)) {
-}
+Section::Section() : DomElement("sectPr", std::string(ooxml_namespaces::kWordprocessingML)) {}
 
 }  // namespace oso

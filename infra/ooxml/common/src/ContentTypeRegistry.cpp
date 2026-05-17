@@ -129,8 +129,9 @@ const std::unordered_map<std::string_view, std::string_view> ContentTypeRegistry
 std::string_view ContentTypeRegistry::lookupOverride(const std::string& partName) {
     // 先精确匹配
     for (const auto& [name, mime] : kPartMime) {
-        if (partName == name)
+        if (partName == name) {
             return mime;
+        }
     }
     // 再前缀匹配（用于编号文件：sheet1.xml / sheet2.xml / slide3.xml 等）
     for (const auto& [name, mime] : kPartMime) {
@@ -144,8 +145,9 @@ std::string_view ContentTypeRegistry::lookupOverride(const std::string& partName
 
 std::string_view ContentTypeRegistry::lookupDefault(const std::string& ext) {
     for (const auto& [e, mime] : kExtensionMime) {
-        if (ext == e)
+        if (ext == e) {
             return mime;
+        }
     }
     return "";
 }
@@ -161,22 +163,20 @@ std::vector<uint8_t> ContentTypeRegistry::generate(const std::vector<std::string
         std::string ext = (dot != std::string::npos) ? path.substr(dot + 1) : "";
 
         // .rels 文件始终走 Default，不生成 Override
-        if (ext == "rels")
+        if (ext == "rels") {
             continue;
+        }
 
         std::string_view mime = lookupOverride(path);
-        if (mime.size()) {
+        if (!mime.empty()) {
             overrides.emplace(path, mime);
-        } else {
+        } else if (ext != "xml") {
             mime = lookupDefault(ext);
             // 不在 Override 表中的，检查是否需要加 Default
-            if (ext == "xml") {
-                continue;
-            } else if (mime.size()) {
+            if (!mime.empty()) {
                 extraDefaults.emplace(ext, mime);
-            }
-            // 如果扩展名也不在 Default 表中 → 仍作为 Override 写入（用 application/xml 兜底）
-            else {
+            } else {
+                // 如果扩展名也不在 Default 表中 → 仍作为 Override 写入（用 application/xml 兜底）
                 overrides.emplace(path, "application/xml");
             }
         }
@@ -184,7 +184,7 @@ std::vector<uint8_t> ContentTypeRegistry::generate(const std::vector<std::string
 
     std::ostringstream xml;
     xml << "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
-        << "<Types xmlns=\"" << OoxmlNamespaces::kContentTypes << "\">\n"
+        << "<Types xmlns=\"" << ooxml_namespaces::kContentTypes << "\">\n"
         << "  <Default Extension=\"rels\" "
            "ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/>\n"
         << "  <Default Extension=\"xml\" ContentType=\"application/xml\"/>\n";
@@ -200,12 +200,12 @@ std::vector<uint8_t> ContentTypeRegistry::generate(const std::vector<std::string
     xml << "</Types>\n";
 
     std::string s = xml.str();
-    return std::vector<uint8_t>(s.begin(), s.end());
+    return {s.begin(), s.end()};
 }
 
 Result<ContentTypeRegistry> ContentTypeRegistry::parse(const std::vector<uint8_t>& xmlData) {
     if (xmlData.empty()) {
-        return Result<ContentTypeRegistry>::err(ErrorCode::OOXML_XmlParseError,
+        return Result<ContentTypeRegistry>::err(ErrorCode::OOXMLXmlParseError,
                                                 "Empty [Content_Types].xml data");
     }
 
@@ -213,40 +213,44 @@ Result<ContentTypeRegistry> ContentTypeRegistry::parse(const std::vector<uint8_t
                                   static_cast<int>(xmlData.size()), nullptr, nullptr,
                                   XML_PARSE_NOBLANKS | XML_PARSE_NONET | XML_PARSE_COMPACT);
 
-    if (!doc) {
-        return Result<ContentTypeRegistry>::err(ErrorCode::OOXML_XmlParseError,
+    if (doc == nullptr) {
+        return Result<ContentTypeRegistry>::err(ErrorCode::OOXMLXmlParseError,
                                                 "Failed to parse [Content_Types].xml");
     }
 
     ContentTypeRegistry registry;
 
     xmlNodePtr root = xmlDocGetRootElement(doc);
-    if (!root || std::strcmp(reinterpret_cast<const char*>(root->name), "Types") != 0) {
+    if (root == nullptr || std::strcmp(reinterpret_cast<const char*>(root->name), "Types") != 0) {
         xmlFreeDoc(doc);
-        return Result<ContentTypeRegistry>::err(ErrorCode::OOXML_InvalidSchema,
+        return Result<ContentTypeRegistry>::err(ErrorCode::OOXMLInvalidSchema,
                                                 "[Content_Types].xml root element is not <Types>");
     }
 
-    for (xmlNodePtr child = root->children; child; child = child->next) {
-        if (child->type != XML_ELEMENT_NODE)
+    for (xmlNodePtr child = root->children; child != nullptr; child = child->next) {
+        if (child->type != XML_ELEMENT_NODE) {
             continue;
+        }
 
         const char* nodeName = reinterpret_cast<const char*>(child->name);
         bool isOverride = (std::strcmp(nodeName, "Override") == 0);
         bool isDefault = (std::strcmp(nodeName, "Default") == 0);
 
-        if (!isOverride && !isDefault)
+        if (!isOverride && !isDefault) {
             continue;
+        }
 
         xmlChar* partName = xmlGetProp(
             child, reinterpret_cast<const xmlChar*>(isOverride ? "PartName" : "Extension"));
         xmlChar* contentType = xmlGetProp(child, reinterpret_cast<const xmlChar*>("ContentType"));
 
-        if (!partName || !contentType) {
-            if (partName)
+        if (partName == nullptr || contentType == nullptr) {
+            if (partName != nullptr) {
                 xmlFree(partName);
-            if (contentType)
+            }
+            if (contentType != nullptr) {
                 xmlFree(contentType);
+            }
             continue;
         }
 
@@ -293,7 +297,7 @@ Result<std::string> ContentTypeRegistry::getTypeForPart(std::string_view partPat
     // 回退至基于扩展名的默认设置
     size_t dotPos = normalized.rfind('.');
     if (dotPos == std::string::npos) {
-        return Result<std::string>::err(ErrorCode::OOXML_BadContentType,
+        return Result<std::string>::err(ErrorCode::OOXMLBadContentType,
                                         "No content type found for part: " + std::string(partPath));
     }
 
@@ -306,7 +310,7 @@ Result<std::string> ContentTypeRegistry::getTypeForExtension(std::string_view ex
     if (it != m_defaults.end()) {
         return Result<std::string>::ok(it->second);
     }
-    return Result<std::string>::err(ErrorCode::OOXML_BadContentType,
+    return Result<std::string>::err(ErrorCode::OOXMLBadContentType,
                                     "No content type for extension: " + std::string(ext));
 }
 

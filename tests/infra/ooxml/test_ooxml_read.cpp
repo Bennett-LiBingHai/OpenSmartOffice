@@ -21,11 +21,8 @@ namespace {
 
 struct TempFile {
     std::string path;
-    explicit TempFile(std::string p) : path(std::move(p)) {
-    }
-    ~TempFile() {
-        std::remove(path.c_str());
-    }
+    explicit TempFile(std::string p) : path(std::move(p)) {}
+    ~TempFile() { std::remove(path.c_str()); }
 };
 
 }  // anonymous namespace
@@ -94,6 +91,7 @@ TEST(Libxml2Reader, ParseNamespacedXml) {
             events.push_back(oss.str());
         },
         [&](const std::string& nsUri, const std::string& localName, const std::string& qName) {
+            (void)qName;
             std::ostringstream oss;
             oss << "END ns='" << nsUri << "' local='" << localName << "'";
             events.push_back(oss.str());
@@ -141,8 +139,7 @@ TEST(Libxml2Reader, ParseAttributes) {
         data,
         [&](const std::string&, const std::string& localName, const std::string&,
             const std::vector<XmlAttribute>& attrs) {
-            if (localName == "p")
-                capturedAttrs = attrs;
+            if (localName == "p") capturedAttrs = attrs;
         },
         nullptr, nullptr);
 
@@ -232,10 +229,8 @@ TEST(Libxml2Reader, ParseContentTypesXml) {
     bool foundOverride = false;
     bool foundDefault = false;
     for (const auto& el : elements) {
-        if (el.localName == "Override")
-            foundOverride = true;
-        if (el.localName == "Default")
-            foundDefault = true;
+        if (el.localName == "Override") foundOverride = true;
+        if (el.localName == "Default") foundDefault = true;
     }
     EXPECT_TRUE(foundOverride || foundDefault);
 }
@@ -249,7 +244,7 @@ TEST(Libxml2Reader, ParseEmptyData) {
     std::vector<uint8_t> empty;
     auto result = reader.parse(empty, nullptr, nullptr, nullptr);
     EXPECT_TRUE(result.isErr());
-    EXPECT_EQ(result.error(), ErrorCode::OOXML_XmlParseError);
+    EXPECT_EQ(result.error(), ErrorCode::OOXMLXmlParseError);
 }
 
 TEST(Libxml2Reader, ParseMalformedXml) {
@@ -258,7 +253,7 @@ TEST(Libxml2Reader, ParseMalformedXml) {
     std::vector<uint8_t> data(xml, xml + std::strlen(xml));
     auto result = reader.parse(data, nullptr, nullptr, nullptr);
     EXPECT_TRUE(result.isErr());
-    EXPECT_EQ(result.error(), ErrorCode::OOXML_XmlParseError);
+    EXPECT_EQ(result.error(), ErrorCode::OOXMLXmlParseError);
 }
 
 TEST(Libxml2Reader, ParseNoCallbacksOk) {
@@ -286,6 +281,7 @@ TEST(Libxml2Reader, ParseStreamFromMemory) {
         stream,
         [&](const std::string&, const std::string& localName, const std::string& qName,
             const std::vector<XmlAttribute>& attrs) {
+            (void)qName;
             std::ostringstream oss;
             oss << "START local='" << localName << "' attrs=" << attrs.size();
             events.push_back(oss.str());
@@ -335,24 +331,25 @@ TEST(Libxml2Reader, ParseStreamWithText) {
 // ============================================================
 
 TEST(OoxmlNamespaces, WordprocessingML) {
-    EXPECT_EQ(OoxmlNamespaces::kWordprocessingML,
+    EXPECT_EQ(ooxml_namespaces::kWordprocessingML,
               "http://schemas.openxmlformats.org/wordprocessingml/2006/main");
 }
 
 TEST(OoxmlNamespaces, SpreadsheetML) {
-    EXPECT_EQ(OoxmlNamespaces::kSpreadsheetML,
+    EXPECT_EQ(ooxml_namespaces::kSpreadsheetML,
               "http://schemas.openxmlformats.org/spreadsheetml/2006/main");
 }
 
 TEST(OoxmlNamespaces, DrawingML) {
-    EXPECT_EQ(OoxmlNamespaces::kDrawingML, "http://schemas.openxmlformats.org/drawingml/2006/main");
+    EXPECT_EQ(ooxml_namespaces::kDrawingML,
+              "http://schemas.openxmlformats.org/drawingml/2006/main");
 }
 
 TEST(OoxmlNamespaces, PrefixMapContainsCorePrefixes) {
-    const auto& map = OoxmlNamespaces::prefixMap();
-    EXPECT_EQ(map.at("w"), OoxmlNamespaces::kWordprocessingML);
-    EXPECT_EQ(map.at("x"), OoxmlNamespaces::kSpreadsheetML);
-    EXPECT_EQ(map.at("p"), OoxmlNamespaces::kPresentationML);
-    EXPECT_EQ(map.at("a"), OoxmlNamespaces::kDrawingML);
-    EXPECT_EQ(map.at("r"), OoxmlNamespaces::kRelationships);
+    const auto& map = ooxml_namespaces::prefixMap();
+    EXPECT_EQ(map.at("w"), ooxml_namespaces::kWordprocessingML);
+    EXPECT_EQ(map.at("x"), ooxml_namespaces::kSpreadsheetML);
+    EXPECT_EQ(map.at("p"), ooxml_namespaces::kPresentationML);
+    EXPECT_EQ(map.at("a"), ooxml_namespaces::kDrawingML);
+    EXPECT_EQ(map.at("r"), ooxml_namespaces::kRelationships);
 }

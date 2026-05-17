@@ -23,7 +23,7 @@ namespace oso {
 // Target="docProps/custom.xml"/>
 // </Relationships>
 class RelationshipMap {
-   public:
+public:
     // Relationship标签实体
     struct Relationship {
         std::string id;  // rId1, rId2, ...
@@ -53,13 +53,11 @@ class RelationshipMap {
     std::vector<const Relationship*> getAllByType(std::string_view type) const;
 
     // 获取所有Relationship标签实体
-    const std::vector<Relationship>& getAll() const {
-        return m_relationships;
-    }
+    const std::vector<Relationship>& getAll() const { return m_relationships; }
 
     RelationshipMap() = default;
 
-   private:
+private:
     std::vector<Relationship> m_relationships;  // 所有Relationship标签实体
     std::unordered_map<std::string, size_t> m_byId;  // 通过id → 映射m_relationships中的下标
 };

@@ -15,13 +15,13 @@ namespace oso {
  * 支持移动语义，禁止拷贝语义。
  */
 class LibzipZipArchive : public IZipArchive {
-   public:
+public:
     /**
      * @brief 构造函数
      *
      * 创建一个未打开的空档案对象。
      */
-    LibzipZipArchive();
+    LibzipZipArchive() = default;
 
     /**
      * @brief 析构函数
@@ -74,7 +74,7 @@ class LibzipZipArchive : public IZipArchive {
      *
      * @return 成功返回条目数组；失败返回错误码（如档案未打开）
      */
-    Result<std::vector<Entry>> entries() const override;
+    [[nodiscard]] Result<std::vector<Entry>> entries() const override;
 
     /**
      * @brief 读取指定条目内容
@@ -107,10 +107,10 @@ class LibzipZipArchive : public IZipArchive {
      *
      * @return 已打开返回 true，否则返回 false
      */
-    bool isOpen() const override;
+    [[nodiscard]] bool isOpen() const override;
 
-   private:
-    struct zip* m_archive;  ///< libzip 底层句柄，未打开时为 nullptr
+private:
+    struct zip* m_archive{nullptr};  ///< libzip 底层句柄，未打开时为 nullptr
 };
 
 }  // namespace oso

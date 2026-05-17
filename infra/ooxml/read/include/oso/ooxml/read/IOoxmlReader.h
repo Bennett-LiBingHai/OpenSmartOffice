@@ -24,7 +24,7 @@ struct XmlAttribute {
 /// 数据解析为一系列事件：开始元素、结束元素和文本内容。
 /// 调用者在调用 parse() 或 parseStream() 时注册回调函数。
 class IOoxmlReader {
-   public:
+public:
     virtual ~IOoxmlReader() = default;
 
     /// 开始元素回调签名。

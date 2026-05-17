@@ -8,61 +8,61 @@ std::string ErrorCode::toString() const {
         case Ok:
             return "Ok";
 
-        case IO_FileNotFound:
-            return "IO_FileNotFound";
-        case IO_AccessDenied:
-            return "IO_AccessDenied";
-        case IO_ReadError:
-            return "IO_ReadError";
-        case IO_WriteError:
-            return "IO_WriteError";
-        case IO_UnexpectedEof:
-            return "IO_UnexpectedEof";
+        case IOFileNotFound:
+            return "IOFileNotFound";
+        case IOAccessDenied:
+            return "IOAccessDenied";
+        case IOReadError:
+            return "IOReadError";
+        case IOWriteError:
+            return "IOWriteError";
+        case IOUnexpectedEof:
+            return "IOUnexpectedEof";
 
-        case Concurrent_QueueFull:
-            return "Concurrent_QueueFull";
-        case Concurrent_Shutdown:
-            return "Concurrent_Shutdown";
-        case Concurrent_Timeout:
-            return "Concurrent_Timeout";
+        case ConcurrentQueueFull:
+            return "ConcurrentQueueFull";
+        case ConcurrentShutdown:
+            return "ConcurrentShutdown";
+        case ConcurrentTimeout:
+            return "ConcurrentTimeout";
 
-        case OOXML_ZipCorrupted:
-            return "OOXML_ZipCorrupted";
-        case OOXML_ZipEntryMissing:
-            return "OOXML_ZipEntryMissing";
-        case OOXML_XmlParseError:
-            return "OOXML_XmlParseError";
-        case OOXML_InvalidSchema:
-            return "OOXML_InvalidSchema";
-        case OOXML_MissingPart:
-            return "OOXML_MissingPart";
-        case OOXML_BadContentType:
-            return "OOXML_BadContentType";
-        case OOXML_ZipWriteError:
-            return "OOXML_ZipWriteError";
+        case OOXMLZipCorrupted:
+            return "OOXMLZipCorrupted";
+        case OOXMLZipEntryMissing:
+            return "OOXMLZipEntryMissing";
+        case OOXMLXmlParseError:
+            return "OOXMLXmlParseError";
+        case OOXMLInvalidSchema:
+            return "OOXMLInvalidSchema";
+        case OOXMLMissingPart:
+            return "OOXMLMissingPart";
+        case OOXMLBadContentType:
+            return "OOXMLBadContentType";
+        case OOXMLZipWriteError:
+            return "OOXMLZipWriteError";
 
-        case Formula_SyntaxError:
-            return "Formula_SyntaxError";
-        case Formula_CircularRef:
-            return "Formula_CircularRef";
-        case Formula_UnknownFunc:
-            return "Formula_UnknownFunc";
-        case Formula_TypeError:
-            return "Formula_TypeError";
+        case FormulaSyntaxError:
+            return "FormulaSyntaxError";
+        case FormulaCircularRef:
+            return "FormulaCircularRef";
+        case FormulaUnknownFunc:
+            return "FormulaUnknownFunc";
+        case FormulaTypeError:
+            return "FormulaTypeError";
 
-        case Render_FontNotFound:
-            return "Render_FontNotFound";
-        case Render_ImageDecode:
-            return "Render_ImageDecode";
+        case RenderFontNotFound:
+            return "RenderFontNotFound";
+        case RenderImageDecode:
+            return "RenderImageDecode";
 
-        case DOM_InvalidNodeType:
-            return "DOM_InvalidNodeType";
-        case DOM_InvalidOperation:
-            return "DOM_InvalidOperation";
-        case DOM_IndexOutOfRange:
-            return "DOM_IndexOutOfRange";
-        case DOM_DocumentCorrupted:
-            return "DOM_DocumentCorrupted";
+        case DOMInvalidNodeType:
+            return "DOMInvalidNodeType";
+        case DOMInvalidOperation:
+            return "DOMInvalidOperation";
+        case DOMIndexOutOfRange:
+            return "DOMIndexOutOfRange";
+        case DOMDocumentCorrupted:
+            return "DOMDocumentCorrupted";
 
         default:
             return "Unknown(" + std::to_string(raw()) + ")";

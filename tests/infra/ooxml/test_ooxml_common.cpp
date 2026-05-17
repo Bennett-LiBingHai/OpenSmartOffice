@@ -19,11 +19,9 @@ namespace {
 struct TempFile {
     std::string path;
     bool isRemain;
-    explicit TempFile(std::string p, bool ir = false) : path(std::move(p)), isRemain(ir) {
-    }
+    explicit TempFile(std::string p, bool ir = false) : path(std::move(p)), isRemain(ir) {}
     ~TempFile() {
-        if (!isRemain)
-            std::remove(path.c_str());
+        if (!isRemain) std::remove(path.c_str());
     }
 };
 
@@ -107,7 +105,7 @@ TEST(LibzipZipArchive, ReadMissingEntry) {
 
     auto data = archive.readEntry("nonexistent_part.xml");
     EXPECT_TRUE(data.isErr());
-    EXPECT_EQ(data.error(), ErrorCode::OOXML_ZipEntryMissing);
+    EXPECT_EQ(data.error(), ErrorCode::OOXMLZipEntryMissing);
 }
 
 // ============================================================
@@ -193,7 +191,7 @@ TEST(ContentTypeRegistry, EmptyData) {
     std::vector<uint8_t> empty;
     auto result = ContentTypeRegistry::parse(empty);
     EXPECT_TRUE(result.isErr());
-    EXPECT_EQ(result.error(), ErrorCode::OOXML_XmlParseError);
+    EXPECT_EQ(result.error(), ErrorCode::OOXMLXmlParseError);
 }
 
 // ============================================================
@@ -285,8 +283,7 @@ TEST(IntegrationTest, OpenDocxAndListPartsWithMimeTypes) {
 
     // For each entry, try to get its MIME type
     for (const auto& entry : entries.value()) {
-        if (entry.isDirectory)
-            continue;
+        if (entry.isDirectory) continue;
         auto mimeType = ctResult.value().getTypeForPart(entry.name);
         // All parts should have a MIME type
         EXPECT_TRUE(mimeType.isOk())
@@ -422,7 +419,7 @@ TEST(LibzipZipArchive, WriteWithoutCreate) {
     std::vector<uint8_t> data = {0x01};
     auto result = archive.writeEntry("test.xml", data);
     EXPECT_TRUE(result.isErr());
-    EXPECT_EQ(result.error(), ErrorCode::OOXML_ZipWriteError);
+    EXPECT_EQ(result.error(), ErrorCode::OOXMLZipWriteError);
 }
 
 // ============================================================
@@ -670,8 +667,7 @@ TEST(IntegrationTest, AllPartsHaveValidMimeTypes) {
     ASSERT_TRUE(ctParsed.isOk());
 
     for (const auto& entry : entries.value()) {
-        if (entry.isDirectory)
-            continue;
+        if (entry.isDirectory) continue;
         // std::cout<<entry.name<<std::endl;
         auto mime = ctParsed.value().getTypeForPart(entry.name);
         EXPECT_TRUE(mime.isOk()) << mime.message();
@@ -778,77 +774,81 @@ static std::vector<uint8_t> makeThemeXml() {
     return strToBytes(xml);
 }
 
-// TEST(IntegrationTest, GenerateValidDocxForWps) {
-//     // use isRemain=true to keep the file for manual verification
-//     TempFile tmp(tempPath("acceptance_blank.docx"), true);
-//     std::cout << "Output: " << tmp.path << std::endl;
+TEST(IntegrationTest, GenerateValidDocxForWps) {
+    // use isRemain=true to keep the file for manual verification
+    TempFile tmp(tempPath("acceptance_blank.docx"), false);
+    std::cout << "Output: " << tmp.path << std::endl;
 
-//     LibzipZipArchive writer;
-//     ASSERT_TRUE(writer.create(tmp.path).isOk());
+    LibzipZipArchive writer;
+    ASSERT_TRUE(writer.create(tmp.path).isOk());
 
-//     // Step 1: [Content_Types].xml (first entry per OOXML spec)
-//     ASSERT_TRUE(writer.writeEntry("[Content_Types].xml",
-//         ContentTypeRegistry::generate({
-//             "_rels/.rels",
-//             "word/document.xml",
-//             "word/_rels/document.xml.rels",
-//             // "docProps/core.xml",
-//             // "docProps/app.xml",
-//             // "word/styles.xml",
-//             // "word/settings.xml",
-//             // "word/fontTable.xml",
-//             // "word/theme/theme1.xml",
-//         })).isOk());
+    // Step 1: [Content_Types].xml (first entry per OOXML spec)
+    ASSERT_TRUE(writer
+                    .writeEntry("[Content_Types].xml", ContentTypeRegistry::generate({
+                                                           "_rels/.rels",
+                                                           "word/document.xml",
+                                                           "word/_rels/document.xml.rels",
+                                                           "docProps/core.xml",
+                                                           "docProps/app.xml",
+                                                           "word/styles.xml",
+                                                           "word/settings.xml",
+                                                           "word/fontTable.xml",
+                                                           "word/theme/theme1.xml",
+                                                       }))
+                    .isOk());
 
-//     // Step 2: Root relationships
-//     ASSERT_TRUE(writer.writeEntry("_rels/.rels",
-//         RelationshipMap::generate({
-//             {"rId1", kOfficeDocRel, "word/document.xml", false},
-//             // {"rId2", kRelCoreProps, "docProps/core.xml", false},
-//             // {"rId3", kRelExtProps, "docProps/app.xml", false},
-//         })).isOk());
+    // Step 2: Root relationships
+    ASSERT_TRUE(
+        writer
+            .writeEntry("_rels/.rels", RelationshipMap::generate({
+                                           {"rId1", kOfficeDocRel, "word/document.xml", false},
+                                           {"rId2", kRelCoreProps, "docProps/core.xml", false},
+                                           {"rId3", kRelExtProps, "docProps/app.xml", false},
+                                       }))
+            .isOk());
 
-//     // Step 3: Document
-//     ASSERT_TRUE(writer.writeEntry("word/document.xml", makeMinimalDocumentXml()).isOk());
+    // Step 3: Document
+    ASSERT_TRUE(writer.writeEntry("word/document.xml", makeMinimalDocumentXml()).isOk());
 
-//     // // Step 4: Document-level relationships
-//     // ASSERT_TRUE(writer.writeEntry("word/_rels/document.xml.rels",
-//     //     RelationshipMap::generate({
-//     //         {"rId1", kRelStyles,   "styles.xml", false},
-//     //         {"rId2", kRelSettings, "settings.xml", false},
-//     //         {"rId3", kRelFontTable,"fontTable.xml", false},
-//     //         {"rId4", kRelTheme,    "theme/theme1.xml", false},
-//     //     })).isOk());
+    // Step 4: Document-level relationships
+    ASSERT_TRUE(writer
+                    .writeEntry("word/_rels/document.xml.rels",
+                                RelationshipMap::generate({
+                                    {"rId1", kRelStyles, "styles.xml", false},
+                                    {"rId2", kRelSettings, "settings.xml", false},
+                                    {"rId3", kRelFontTable, "fontTable.xml", false},
+                                    {"rId4", kRelTheme, "theme/theme1.xml", false},
+                                }))
+                    .isOk());
 
-//     // // Step 5-6: docProps
-//     // ASSERT_TRUE(writer.writeEntry("docProps/core.xml", makeCorePropsXml()).isOk());
-//     // ASSERT_TRUE(writer.writeEntry("docProps/app.xml", makeAppPropsXml()).isOk());
+    // Step 5-6: docProps
+    ASSERT_TRUE(writer.writeEntry("docProps/core.xml", makeCorePropsXml()).isOk());
+    ASSERT_TRUE(writer.writeEntry("docProps/app.xml", makeAppPropsXml()).isOk());
 
-//     // // Step 7-10: Document support parts
-//     // ASSERT_TRUE(writer.writeEntry("word/styles.xml", makeStylesXml()).isOk());
-//     // ASSERT_TRUE(writer.writeEntry("word/settings.xml", makeSettingsXml()).isOk());
-//     // ASSERT_TRUE(writer.writeEntry("word/fontTable.xml", makeFontTableXml()).isOk());
-//     // ASSERT_TRUE(writer.writeEntry("word/theme/theme1.xml", makeThemeXml()).isOk());
+    // Step 7-10: Document support parts
+    ASSERT_TRUE(writer.writeEntry("word/styles.xml", makeStylesXml()).isOk());
+    ASSERT_TRUE(writer.writeEntry("word/settings.xml", makeSettingsXml()).isOk());
+    ASSERT_TRUE(writer.writeEntry("word/fontTable.xml", makeFontTableXml()).isOk());
+    ASSERT_TRUE(writer.writeEntry("word/theme/theme1.xml", makeThemeXml()).isOk());
 
-//     ASSERT_TRUE(writer.close().isOk());
+    ASSERT_TRUE(writer.close().isOk());
 
-//     // === Verify ===
-//     LibzipZipArchive reader;
-//     ASSERT_TRUE(reader.open(tmp.path).isOk());
-//     auto entries = reader.entries();
-//     ASSERT_TRUE(entries.isOk());
-//     // ASSERT_GE(entries.value().size(), 10u);
+    // === Verify ===
+    LibzipZipArchive reader;
+    ASSERT_TRUE(reader.open(tmp.path).isOk());
+    auto entries = reader.entries();
+    ASSERT_TRUE(entries.isOk());
+    // ASSERT_GE(entries.value().size(), 10u);
 
-//     // Read back [Content_Types].xml and verify all parts have valid MIME types
-//     auto ctBack = reader.readEntry("[Content_Types].xml");
-//     ASSERT_TRUE(ctBack.isOk());
-//     auto ctParsed = ContentTypeRegistry::parse(ctBack.value());
-//     ASSERT_TRUE(ctParsed.isOk());
+    // Read back [Content_Types].xml and verify all parts have valid MIME types
+    auto ctBack = reader.readEntry("[Content_Types].xml");
+    ASSERT_TRUE(ctBack.isOk());
+    auto ctParsed = ContentTypeRegistry::parse(ctBack.value());
+    ASSERT_TRUE(ctParsed.isOk());
 
-//     for (const auto& entry : entries.value()) {
-//         if (entry.isDirectory) continue;
-//         auto mime = ctParsed.value().getTypeForPart(entry.name);
-//         EXPECT_TRUE(mime.isOk())
-//             << "Part '" << entry.name << "' has no MIME type";
-//     }
-// }
+    for (const auto& entry : entries.value()) {
+        if (entry.isDirectory) continue;
+        auto mime = ctParsed.value().getTypeForPart(entry.name);
+        EXPECT_TRUE(mime.isOk()) << "Part '" << entry.name << "' has no MIME type";
+    }
+}

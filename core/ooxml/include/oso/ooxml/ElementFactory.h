@@ -15,7 +15,7 @@ namespace oso {
 // 保留全部属性和子元素，保障无损读写。
 // ============================================================
 class ElementFactory {
-   public:
+public:
     /// 元素创建函数签名：接收 localName 和 namespaceUri，返回新建的 DOM 节点
     using CreatorFn = std::function<std::unique_ptr<DomNode>(const std::string& localName,
                                                              const std::string& namespaceUri)>;
@@ -34,7 +34,7 @@ class ElementFactory {
     /// 检查某个元素类型是否已注册
     bool isRegistered(const std::string& namespaceUri, const std::string& localName) const;
 
-   private:
+private:
     ElementFactory() = default;
 
     /// 组合 namespaceUri + localName 为查询键

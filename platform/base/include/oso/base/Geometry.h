@@ -23,22 +23,12 @@ struct Rect {
     float width = 0;  ///< 宽度
     float height = 0;  ///< 高度
 
-    float left() const {
-        return x;
-    }  ///< 左边界 X 坐标
-    float right() const {
-        return x + width;
-    }  ///< 右边界 X 坐标
-    float top() const {
-        return y;
-    }  ///< 上边界 Y 坐标
-    float bottom() const {
-        return y + height;
-    }  ///< 下边界 Y 坐标
+    float left() const { return x; }  ///< 左边界 X 坐标
+    float right() const { return x + width; }  ///< 右边界 X 坐标
+    float top() const { return y; }  ///< 上边界 Y 坐标
+    float bottom() const { return y + height; }  ///< 下边界 Y 坐标
 
-    bool isEmpty() const {
-        return width <= 0 || height <= 0;
-    }  ///< 是否为空矩形
+    bool isEmpty() const { return width <= 0 || height <= 0; }  ///< 是否为空矩形
     bool contains(Point p) const {  ///< 是否包含指定点
         return p.x >= x && p.x <= right() && p.y >= y && p.y <= bottom();
     }

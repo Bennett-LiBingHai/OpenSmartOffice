@@ -16,7 +16,7 @@ namespace oso {
 // ============================================================
 class Body;
 class WordDocument : public DomDocument {
-   public:
+public:
     WordDocument();
 
     /// 获取文档正文（<w:body>）
@@ -35,7 +35,7 @@ class WordDocument : public DomDocument {
 // M1 阶段仅支持段落。
 // ============================================================
 class Body : public DomElement {
-   public:
+public:
     Body();
 
     /// 添加段落
@@ -57,7 +57,7 @@ class Body : public DomElement {
 // 段落属性（<w:pPr>）通过 attributes() 保留，不单独解析。
 // ============================================================
 class Paragraph : public DomElement {
-   public:
+public:
     Paragraph();
 
     /// 添加 Run（文字运行）
@@ -79,7 +79,7 @@ class Paragraph : public DomElement {
 // 运行属性通过 attributes() 保留，不单独解析。
 // ============================================================
 class Run : public DomElement {
-   public:
+public:
     Run();
 
     /// 添加文本节点
@@ -101,7 +101,7 @@ class Run : public DomElement {
 // 属性 xml:space="preserve" 用于保留前导/尾随空白。
 // ============================================================
 class Text : public DomElement {
-   public:
+public:
     // 初始化时自动增加一个默认构造的DomText节点
     explicit Text();
 
@@ -119,7 +119,7 @@ class Text : public DomElement {
 // M1 阶段作为泛型元素保留，不解构，保障 round-trip。
 // ============================================================
 class Section : public DomElement {
-   public:
+public:
     Section();
 };
 

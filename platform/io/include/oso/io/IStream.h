@@ -16,7 +16,7 @@ enum class StreamSeek : uint8_t {
 
 /// 字节流抽象接口，支持读写和定位操作
 class IStream {
-   public:
+public:
     virtual ~IStream() = default;
 
     /// 读取最多 maxLen 字节到 buffer，返回实际读取的字节数
@@ -38,52 +38,44 @@ class IStream {
     /// @param whence 基准位置
     virtual Result<uint64_t> seek(int64_t offset, StreamSeek whence) = 0;
     /// 获取当前读写位置
-    virtual Result<uint64_t> tell() const = 0;
+    [[nodiscard]] virtual Result<uint64_t> tell() const = 0;
 
-    virtual bool isOpen() const = 0;  ///< 流是否已打开
+    [[nodiscard]] virtual bool isOpen() const = 0;  ///< 流是否已打开
     virtual Result<void> flush() = 0;  ///< 刷新缓冲区
     virtual Result<void> close() = 0;  ///< 关闭流
-    virtual Result<uint64_t> size() const = 0;  ///< 获取流的总大小
+    [[nodiscard]] virtual Result<uint64_t> size() const = 0;  ///< 获取流的总大小
 };
 
 // 内存字节流，用于测试和小型缓冲区
 class MemoryStream : public IStream {
-   public:
-    explicit MemoryStream(std::vector<uint8_t> data = {})
-        : m_data(std::move(data)), m_pos(0), m_open(true) {
-    }
+public:
+    explicit MemoryStream(std::vector<uint8_t> data = {}) : m_data(std::move(data)) {}
 
     Result<size_t> read(uint8_t* buffer, size_t maxLen) override;
     Result<std::vector<uint8_t>> readAll() override;
     Result<void> write(const uint8_t* data, size_t len) override;
     Result<uint64_t> seek(int64_t offset, StreamSeek whence) override;
-    Result<uint64_t> tell() const override;
-    bool isOpen() const override {
-        return m_open;
-    }
-    Result<void> flush() override {
-        return Result<void>::ok();
-    }
+    [[nodiscard]] Result<uint64_t> tell() const override;
+    [[nodiscard]] bool isOpen() const override { return m_open; }
+    Result<void> flush() override { return Result<void>::ok(); }
     Result<void> close() override;
-    Result<uint64_t> size() const override {
+    [[nodiscard]] Result<uint64_t> size() const override {
         return Result<uint64_t>::ok(m_data.size());
     }
 
-    const std::vector<uint8_t>& data() const {
-        return m_data;
-    }
+    [[nodiscard]] const std::vector<uint8_t>& data() const { return m_data; }
 
-   private:
+private:
     std::vector<uint8_t> m_data;
-    size_t m_pos;
-    bool m_open;
+    uint64_t m_pos{0};
+    bool m_open{true};
 };
 
 /// 文件字节流，封装标准 C FILE 操作。
 ///
 /// 不可拷贝，析构时自动关闭文件。
 class FileStream : public IStream {
-   public:
+public:
     /// 以指定模式打开文件。
     /// @param path      文件路径
     /// @param mode      打开模式（"rb" / "wb" / "ab" 等，遵循 fopen 约定）
@@ -92,20 +84,20 @@ class FileStream : public IStream {
 
     FileStream(const FileStream&) = delete;
     FileStream& operator=(const FileStream&) = delete;
-    FileStream(FileStream&&) noexcept;
-    FileStream& operator=(FileStream&&) noexcept;
+    FileStream(FileStream&& other) noexcept;
+    FileStream& operator=(FileStream&& other) noexcept;
 
     Result<size_t> read(uint8_t* buffer, size_t maxLen) override;
     Result<std::vector<uint8_t>> readAll() override;
     Result<void> write(const uint8_t* data, size_t len) override;
     Result<uint64_t> seek(int64_t offset, StreamSeek whence) override;
-    Result<uint64_t> tell() const override;
-    bool isOpen() const override;
+    [[nodiscard]] Result<uint64_t> tell() const override;
+    [[nodiscard]] bool isOpen() const override;
     Result<void> flush() override;
     Result<void> close() override;
-    Result<uint64_t> size() const override;
+    [[nodiscard]] Result<uint64_t> size() const override;
 
-   private:
+private:
     FILE* m_file;
 };
 

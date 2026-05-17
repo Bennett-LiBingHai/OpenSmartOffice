@@ -269,8 +269,7 @@ TEST(DomNode, SerializeWithAttributes) {
         stream.data(),
         [&](const std::string&, const std::string& localName, const std::string&,
             const std::vector<XmlAttribute>& attrs) {
-            if (localName == "root")
-                captured = attrs;
+            if (localName == "root") captured = attrs;
         },
         nullptr, nullptr);
 

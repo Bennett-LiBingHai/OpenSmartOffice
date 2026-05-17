@@ -18,11 +18,10 @@ constexpr const char* TEST_LOG_FILE = "/tmp/oso_test_log.txt";
 // ============================================================
 
 class LogTestHelper {
-   public:
+public:
     static bool fileContains(const std::string& filename, const std::string& substr) {
         std::ifstream ifs(filename);
-        if (!ifs.is_open())
-            return false;
+        if (!ifs.is_open()) return false;
         std::string content((std::istreambuf_iterator<char>(ifs)),
                             std::istreambuf_iterator<char>());
         return content.find(substr) != std::string::npos;

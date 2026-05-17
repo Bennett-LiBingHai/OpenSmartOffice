@@ -273,7 +273,7 @@ TEST(MemoryStream, SeekSetNegative) {
 
     auto r = stream.seek(-1, StreamSeek::START);  // SEEK_SET negative
     EXPECT_TRUE(r.isErr());
-    EXPECT_EQ(r.error(), ErrorCode::IO_ReadError);
+    EXPECT_EQ(r.error(), ErrorCode::IOReadError);
 }
 
 TEST(MemoryStream, SeekPastEnd) {
@@ -282,7 +282,7 @@ TEST(MemoryStream, SeekPastEnd) {
 
     auto r = stream.seek(100, StreamSeek::START);  // beyond data size
     EXPECT_TRUE(r.isErr());
-    EXPECT_EQ(r.error(), ErrorCode::IO_ReadError);
+    EXPECT_EQ(r.error(), ErrorCode::IOReadError);
 }
 
 TEST(MemoryStream, SeekCurTooFarBack) {
@@ -341,7 +341,7 @@ TEST(MemoryStream, ReadAfterClose) {
     uint8_t buf[4] = {};
     auto r = stream.read(buf, 4);
     EXPECT_TRUE(r.isErr());
-    EXPECT_EQ(r.error(), ErrorCode::IO_ReadError);
+    EXPECT_EQ(r.error(), ErrorCode::IOReadError);
 }
 
 TEST(MemoryStream, ReadAllAfterClose) {
@@ -350,7 +350,7 @@ TEST(MemoryStream, ReadAllAfterClose) {
 
     auto r = stream.readAll();
     EXPECT_TRUE(r.isErr());
-    EXPECT_EQ(r.error(), ErrorCode::IO_ReadError);
+    EXPECT_EQ(r.error(), ErrorCode::IOReadError);
 }
 
 TEST(MemoryStream, WriteAfterClose) {
@@ -360,7 +360,7 @@ TEST(MemoryStream, WriteAfterClose) {
     uint8_t data[] = {1, 2};
     auto r = stream.write(data, 2);
     EXPECT_TRUE(r.isErr());
-    EXPECT_EQ(r.error(), ErrorCode::IO_WriteError);
+    EXPECT_EQ(r.error(), ErrorCode::IOWriteError);
 }
 
 // ============================================================
@@ -451,17 +451,12 @@ TEST(MemoryStream, RoundTrip_LargeData) {
 
 namespace {
 
-std::string tmpPath(const std::string& name) {
-    return "/tmp/oso_fs_test_" + name;
-}
+std::string tmpPath(const std::string& name) { return "/tmp/oso_fs_test_" + name; }
 
 struct TmpFileGuard {
     std::string path;
-    explicit TmpFileGuard(std::string p) : path(std::move(p)) {
-    }
-    ~TmpFileGuard() {
-        std::remove(path.c_str());
-    }
+    explicit TmpFileGuard(std::string p) : path(std::move(p)) {}
+    ~TmpFileGuard() { std::remove(path.c_str()); }
 };
 
 void writeTestFile(const std::string& path, const std::string& content) {
